@@ -3,6 +3,7 @@
 
 namespace ks
 {
+
 	ShaderProgram::~ShaderProgram()
 	{
 		if (bgfx::isValid(m_program))
@@ -11,11 +12,11 @@ namespace ks
 		}
 	}
 
-	std::shared_ptr<ShaderProgram> ShaderProgram::create(const bgfx::Memory * vertextCode, const bgfx::Memory * fragmentCode) noexcept
+	ShaderProgram* ShaderProgram::create(const bgfx::Memory * vertextCode, const bgfx::Memory * fragmentCode) noexcept
 	{
 		assert(vertextCode);
 		assert(fragmentCode);
-		std::shared_ptr<ShaderProgram> program = std::make_shared<ShaderProgram>();
+		ShaderProgram* program = new ShaderProgram();
 
 		program->_vertextCode = vertextCode;
 		program->_fragmentCode = fragmentCode;

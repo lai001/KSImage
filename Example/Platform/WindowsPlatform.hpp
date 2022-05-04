@@ -26,6 +26,7 @@ public:
 	~WindowsPlatform();
 
 	std::function<bool(HWND, UINT, WPARAM, LPARAM, bool&)> WndProcCallback;
+	std::function<void(unsigned int width, unsigned int height)> sizeChange;
 
 	void Init(const Configuration &cfg);
 	bool shouldClose();

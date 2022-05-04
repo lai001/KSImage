@@ -3,10 +3,11 @@
 
 #include <glm/glm.hpp>
 #include <bgfx/bgfx.h>
+#include "defs.hpp"
 
 namespace ks
 {
-	struct ImageVertex
+	struct KSImage_API ImageVertex
 	{
 		glm::vec3 position;
 		glm::vec2 texcoord;

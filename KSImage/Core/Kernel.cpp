@@ -31,6 +31,18 @@ void main()
 		{
 			bgfx::destroy(m_ibh);
 		}
+		assert(program);
+		delete program;
+		for (ks::KernelUniform * item : uniforms)
+		{
+			assert(item);
+			delete item;
+		}
+		for (const auto& args : kernel_texture2ds)
+		{
+			assert(args.second);
+			delete args.second;
+		}
 	}
 
 	std::shared_ptr<Kernel> Kernel::create(
@@ -46,7 +58,7 @@ void main()
 		kernel->program = ShaderProgram::create(vertextCodeMemory, codeMemory);
 		for (auto Info : kernel_uniform_infos)
 		{
-			kernel->uniforms.push_back(ks::KernelUniform::create(Info));
+			kernel->uniforms.push_back(new ks::KernelUniform(Info));
 			if (Info.type == ks::KernelUniform::ValueType::texture2d)
 			{
 				kernel->kernel_texture2ds.emplace(Info.name, ks::KernelTexture2D::createPlaceHolder());
@@ -66,7 +78,6 @@ void main()
 
 	std::shared_ptr<Kernel> Kernel::create(const std::string & fragmentShaderCode) noexcept
 	{
-		std::shared_ptr<Kernel> kernel = std::make_shared<Kernel>();
 		ks::FragmentAnalysis analysis;
 		ks::FragmentAnalysis::AnalysisResult result = analysis.analysis(fragmentShaderCode);
 		ks::ShaderCompiler compiler;
@@ -87,7 +98,7 @@ void main()
 		return m_vbh;
 	}
 
-	bgfx::IndexBufferHandle Kernel::setIndices(std::vector<unsigned int>& indices) noexcept
+	bgfx::IndexBufferHandle Kernel::setIndices(const std::vector<unsigned int>& indices) noexcept
 	{
 		if (bgfx::isValid(m_ibh))
 		{
@@ -105,13 +116,13 @@ void main()
 		bgfx::setVertexBuffer(stream, handle);
 	}
 
-	void Kernel::bindIndices(std::vector<unsigned int>& indices) noexcept
+	void Kernel::bindIndices(const std::vector<unsigned int>& indices) noexcept
 	{
 		bgfx::IndexBufferHandle handle = setIndices(indices);
 		bgfx::setIndexBuffer(handle);
 	}
 
-	void Kernel::bindTexture2D(const std::string & name, const std::shared_ptr<ks::Image> image)
+	void Kernel::bindTexture2D(const std::string & name, const std::shared_ptr<ks::Image> image) noexcept
 	{
 		bool isFindTexture2D = false;
 
@@ -119,8 +130,8 @@ void main()
 		{
 			if (uniform->getName() == name)
 			{
-				getKernel_texture2Ds()[name]->copyImage(image);
-				getKernel_texture2Ds()[name]->bind(_stage, uniform->getHandle());
+				kernel_texture2ds[name]->copyImage(image);
+				kernel_texture2ds[name]->bind(_stage, uniform->getHandle());
 				_stage += 1;
 				_stage %= maxStage;
 				isFindTexture2D = true;
@@ -129,7 +140,7 @@ void main()
 		assert(isFindTexture2D && "Don't find Texture2D");
 	}
 
-	void Kernel::bindTexture2D(const std::string & name, const std::shared_ptr<ks::PixelBuffer> pixelBuffer)
+	void Kernel::bindTexture2D(const std::string & name, const ks::PixelBuffer& pixelBuffer) noexcept
 	{
 		bool isFindTexture2D = false;
 
@@ -137,8 +148,8 @@ void main()
 		{
 			if (uniform->getName() == name)
 			{
-				getKernel_texture2Ds()[name]->copyPixelBuffer(pixelBuffer);
-				getKernel_texture2Ds()[name]->bind(_stage, uniform->getHandle());
+				kernel_texture2ds[name]->copyPixelBuffer(pixelBuffer);
+				kernel_texture2ds[name]->bind(_stage, uniform->getHandle());
 				_stage += 1;
 				_stage %= maxStage;
 				isFindTexture2D = true;
@@ -147,7 +158,7 @@ void main()
 		assert(isFindTexture2D && "Don't find Texture2D");
 	}
 
-	void Kernel::bindUniform(const std::string & name, const ks::KernelUniform::Value & value)
+	void Kernel::bindUniform(const std::string & name, const ks::KernelUniform::Value & value) noexcept
 	{
 		bool isFindUniform = false;
 		for (auto& uniform : uniforms)
@@ -162,14 +173,14 @@ void main()
 		assert(isFindUniform && "Don't find unifom");
 	}
 
-	std::shared_ptr<ShaderProgram> Kernel::getProgram() const noexcept
+	const ShaderProgram* Kernel::getProgram() const noexcept
 	{
 		return program;
 	}
 
 	bgfx::ProgramHandle Kernel::getBgfxProgram() const noexcept
 	{
-		return program.get()->getProgramHandle();
+		return program->getProgramHandle();
 	}
 
 	bgfx::VertexBufferHandle Kernel::getVertexBufferHandle() const noexcept
@@ -182,13 +193,24 @@ void main()
 		return m_ibh;
 	}
 
-	std::vector<std::shared_ptr<KernelUniform>> Kernel::getUniforms() noexcept
+	std::vector<const KernelUniform*> Kernel::getUniforms() noexcept
 	{
-		return uniforms;
+		std::vector<const KernelUniform*> _uniforms;
+		for (ks::KernelUniform* uniform : uniforms)
+		{
+			assert(uniform);
+			_uniforms.push_back(uniform);
+		}
+		return _uniforms;
 	}
 
-	std::unordered_map<std::string, std::shared_ptr<KernelTexture2D>> Kernel::getKernel_texture2Ds() noexcept
+	std::unordered_map<std::string, const KernelTexture2D*> Kernel::getKernel_texture2Ds() noexcept
 	{
-		return kernel_texture2ds;
+		std::unordered_map<std::string, const KernelTexture2D*> dic;
+		for (const auto& args : kernel_texture2ds)
+		{
+			dic[args.first] = args.second;
+		}
+		return dic;
 	}
 }

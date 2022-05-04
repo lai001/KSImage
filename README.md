@@ -13,6 +13,6 @@ c++ 17
 git clone https://github.com/lai001/KSImage.git 
 cd KSImage/Example
 xmake deps
-xmake config -m debug -a x64 --vs_runtime=MTd
+xmake config -m debug -a x64
 xmake project -k vsxmake -a x64 -m debug
 ```

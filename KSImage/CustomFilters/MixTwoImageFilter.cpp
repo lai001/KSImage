@@ -2,11 +2,10 @@
 
 namespace ks
 {
-	std::shared_ptr<ks::Image> ks::MixTwoImageFilter::outputImage()
+	std::shared_ptr<ks::Image> ks::MixTwoImageFilter::outputImage(const ks::Rect* rect)
 	{
 		setValues({ inputImage, u_intensity, inputTargetImage });
-		std::shared_ptr<ks::Image> superImage = Filter::outputImage();
-		return superImage;
+		return Filter::outputImage(rect);
 	}
 
 	std::shared_ptr<MixTwoImageFilter> MixTwoImageFilter::create() noexcept

@@ -3,10 +3,11 @@
 
 #include <Foundation/Foundation.hpp>
 #include <bgfx/bgfx.h>
+#include "defs.hpp"
 
 namespace ks
 {
-	class ShaderProgram : public boost::noncopyable
+	class KSImage_API ShaderProgram : public boost::noncopyable
 	{
 	private:
 		const bgfx::Memory* _vertextCode = nullptr;
@@ -18,7 +19,7 @@ namespace ks
 		
 	public:
 		~ShaderProgram();
-		static std::shared_ptr<ShaderProgram> create(const bgfx::Memory* vertextCode, const bgfx::Memory* fragmentCode) noexcept;
+		static ShaderProgram* create(const bgfx::Memory* vertextCode, const bgfx::Memory* fragmentCode) noexcept;
 
 		bgfx::ProgramHandle getProgramHandle() const noexcept;
 	};

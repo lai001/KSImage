@@ -12,8 +12,9 @@ namespace ks
 	const std::string AdditionalCode = R"(
 float ks_remap(float v, float fromLower, float fromUpper, float toLower, float toUpper)
 {
-    return (v - fromLower) / (fromUpper - fromLower) * (toUpper - toLower) + toLower;
+	return (v - fromLower) / (fromUpper - fromLower) * (toUpper - toLower) + toLower;
 }
+
 float ks_isInRange(float x, float left, float right)
 {
 	return step(step(x, left) + step(right, x), 0.0);
@@ -128,10 +129,10 @@ kernel vec4 mosaicKernel(BgfxSampler2D image)
 		result.fragmentShaderCode = generateFragmentShaderCode(result, code);
 
 		{ // internal uniform
-			result.uniformInfos.push_back(ks::KernelUniform::Info("__u_workingSpacePixelSize", ks::KernelUniform::ValueType::vec2));
+			result.uniformInfos.push_back(ks::KernelUniform::Info(ShareInfo().workingSpacePixelSizeUniformName(), ks::KernelUniform::ValueType::vec2));
 			for (int number = 0; number < result.texture2DCount; number++)
 			{
-				result.uniformInfos.push_back(ks::KernelUniform::Info(fmt::format("__u_sampler{}Space", number), ks::KernelUniform::ValueType::vec4));
+				result.uniformInfos.push_back(ks::KernelUniform::Info(ShareInfo().uniformSamplerSpaceName(number), ks::KernelUniform::ValueType::vec4));
 			}
 		}
 

@@ -137,6 +137,11 @@ LRESULT WINAPI WindowsPlatform::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 			p_ptr->cleanupRenderTarget();
 			p_ptr->pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, 0);
 			p_ptr->createRenderTarget();
+
+			if (p_ptr->sizeChange)
+			{
+				p_ptr->sizeChange((UINT)LOWORD(lParam), (UINT)HIWORD(lParam));
+			}
 		}
 		return 0;
 

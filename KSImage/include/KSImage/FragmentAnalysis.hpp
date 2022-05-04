@@ -7,15 +7,15 @@
 #include <spdlog/fmt/fmt.h>
 #include "KernelUniform.hpp"
 #include "KernelTexture2D.hpp"
+#include "defs.hpp"
 
 namespace ks
 {
-	class FragmentAnalysis
+	class KSImage_API FragmentAnalysis
 	{
 	public:
 		struct ShareInfo
 		{
-
 			std::string uniformPrefix() const noexcept
 			{
 				return "__u_";

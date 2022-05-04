@@ -7,18 +7,21 @@
 #include "Image.hpp"
 #include "Kernel.hpp"
 #include "Util.hpp"
+#include "defs.hpp"
 
 namespace ks
 {
 
-	struct KernelRenderInstruction
+	struct KSImage_API KernelRenderInstruction
 	{
+	private:
 		std::vector<ks::Rect> sampleSapceRects;
 		ks::Rect renderRect;
 
-		void accept(const std::vector<std::shared_ptr<ks::Image>>& images) noexcept
+	public:
+		void accept(const std::vector<std::shared_ptr<ks::Image>>& images, const ks::Rect renderRect) noexcept
 		{
-			renderRect = ks::getUnionRect(images);
+			this->renderRect = renderRect;
 			sampleSapceRects.clear();
 			for (const auto& image : images)
 			{
@@ -48,7 +51,7 @@ namespace ks
 		}
 	};
 
-	class Filter: public boost::noncopyable
+	class KSImage_API Filter: public boost::noncopyable
 	{
 	protected:
 		std::shared_ptr<ks::Kernel> kernel = std::shared_ptr<ks::Kernel>(nullptr);
@@ -56,8 +59,8 @@ namespace ks
 		std::vector<ks::KernelUniform::Value> uniformValues;
 
 	public:
-		virtual KernelRenderInstruction onPrepare();
-		virtual std::shared_ptr<ks::Image> outputImage();
+		virtual KernelRenderInstruction onPrepare(const ks::Rect& renderRect);
+		virtual std::shared_ptr<ks::Image> outputImage(const ks::Rect* rect = nullptr);
 		void setValues(const std::vector<ks::KernelUniform::Value>& uniformValues) noexcept;
 		std::shared_ptr<ks::Kernel> getKernel() const noexcept;
 		std::vector<ks::KernelUniform::Value> getUniformValues() const noexcept;

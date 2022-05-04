@@ -26,8 +26,8 @@ struct OcornutImguiContext
 	bgfx::TextureHandle m_texture;
 	bgfx::UniformHandle s_tex;
 	bgfx::UniformHandle u_imageLodEnabled;
-	int64_t m_last;
-	int32_t m_lastScroll;
+	//int64_t m_last;
+	//int32_t m_lastScroll;
 	bgfx::ViewId m_viewId;
 
 	bool checkAvailTransientBuffers(uint32_t _numVertices, const bgfx::VertexLayout& _layout, uint32_t _numIndices) const noexcept;

@@ -5,10 +5,11 @@
 #include <Foundation/Foundation.hpp>
 #include <bgfx/bgfx.h>
 #include "Util.hpp"
+#include "defs.hpp"
 
 namespace ks
 {
-	class ShaderCompiler
+	class KSImage_API ShaderCompiler
 	{
 	public:
 		struct CompileResult
@@ -26,7 +27,6 @@ namespace ks
 		std::string compileFragmentFile(const std::string& name, const std::string& fragment) const noexcept;
 		ks::ShaderPaire compileFile(const std::string& name, const std::string& vertex, const std::string& fragment) const noexcept;
 
-		int executeCMD(const char *cmd, char *result) const noexcept;
 	};
 }
 

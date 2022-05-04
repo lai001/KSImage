@@ -58,6 +58,8 @@ void OcornutImguiContext::memFree(void * _ptr, void * _userData) noexcept
 
 void OcornutImguiContext::render(ImDrawData * _drawData) noexcept
 {
+	ImGuiIO& io = ImGui::GetIO();
+	
 	// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
 	int fb_width = (int)(_drawData->DisplaySize.x * _drawData->FramebufferScale.x);
 	int fb_height = (int)(_drawData->DisplaySize.y * _drawData->FramebufferScale.y);
@@ -199,8 +201,8 @@ void OcornutImguiContext::create(float _fontSize, bx::AllocatorI * _allocator) n
 	}
 
 	m_viewId = 255;
-	m_lastScroll = 0;
-	m_last = bx::getHPCounter();
+	//m_lastScroll = 0;
+	//m_last = bx::getHPCounter();
 
 	ImGui::SetAllocatorFunctions(memAlloc, memFree, this);
 
@@ -208,11 +210,11 @@ void OcornutImguiContext::create(float _fontSize, bx::AllocatorI * _allocator) n
 
 	ImGuiIO& io = ImGui::GetIO();
 
-	io.DisplaySize = ImVec2(1280.0f, 720.0f);
-	io.DeltaTime = 1.0f / 60.0f;
-	io.IniFilename = NULL;
+	//io.DisplaySize = ImVec2(1280.0f, 720.0f);
+	//io.DeltaTime = 1.0f / 60.0f;
+	//io.IniFilename = NULL;
 
-	setupStyle(true);
+	//setupStyle(true);
 
 	io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
@@ -302,8 +304,8 @@ void OcornutImguiContext::setupStyle(bool _dark) noexcept
 void OcornutImguiContext::beginFrame(int _width, int _height, bgfx::ViewId _viewId) noexcept
 {
 	m_viewId = _viewId;
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize = ImVec2((float)_width, (float)_height);
+	//ImGuiIO& io = ImGui::GetIO();
+	//io.DisplaySize = ImVec2((float)_width, (float)_height);
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }

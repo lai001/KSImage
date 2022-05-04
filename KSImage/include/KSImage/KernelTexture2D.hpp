@@ -5,25 +5,27 @@
 #include <bgfx/bgfx.h>
 #include <glm/glm.hpp>
 #include "Image.hpp"
-#include "PixelBuffer.hpp"
+#include "defs.hpp"
 
 namespace ks
 {
-	class KernelTexture2D : public boost::noncopyable
+	class KSImage_API KernelTexture2D : public boost::noncopyable
 	{
 	private:
 		bgfx::TextureHandle textureHandle = BGFX_INVALID_HANDLE;
 
 	public:
 		~KernelTexture2D();
-		static std::shared_ptr<KernelTexture2D> createPlaceHolder(/*const Info& info*/) noexcept;
+		static KernelTexture2D* createPlaceHolder(/*const Info& info*/) noexcept;
 
 		void copyImage(const std::shared_ptr<ks::Image> image) noexcept;
-		void copyPixelBuffer(const std::shared_ptr<ks::PixelBuffer> PixelBuffer) noexcept;
+		void copyPixelBuffer(const ks::PixelBuffer& pixelBuffer) noexcept;
 
 		void bind(const uint8_t stage, const bgfx::UniformHandle& uniformHandle) const noexcept;
 
 		bgfx::TextureFormat::Enum chooseFormat(const int channelCount) const noexcept;
+		bgfx::TextureFormat::Enum chooseFormat(const ks::PixelBuffer::FormatType formatType) const noexcept;
+		bgfx::TextureFormat::Enum chooseFormat(const ks::Image::FormatType formatType) const noexcept;
 	};
 }
 

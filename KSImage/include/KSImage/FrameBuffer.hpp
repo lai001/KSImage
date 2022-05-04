@@ -3,10 +3,11 @@
 
 #include <bgfx/bgfx.h>
 #include <Foundation/Foundation.hpp>
+#include "defs.hpp"
 
 namespace ks
 {
-	class FrameBuffer : public boost::noncopyable
+	class KSImage_API FrameBuffer : public boost::noncopyable
 	{
 	public:
 		bgfx::FrameBufferHandle m_FrameBufferHandle = BGFX_INVALID_HANDLE;
@@ -17,8 +18,6 @@ namespace ks
 
 		explicit FrameBuffer(const int width, const int height);
 		~FrameBuffer();
-
-		static std::shared_ptr<FrameBuffer> create(const int width, const int height) noexcept;
 	};
 }
 

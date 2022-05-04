@@ -1,9 +1,20 @@
 includes("../../Foundation/Foundation")
 
-add_requires("bgfx", {debug = true, configs = {vs_runtime = "MTd"}})
+add_requires("bgfx")
 add_requires("spdlog")
-add_requires("stb")
+-- add_requires("stb")
 add_requires("glm")
+
+rule("KSImage.deps")
+    on_load(function (target)
+        local oldir = os.cd(target:scriptdir())
+        import("devel.git")
+        if os.exists("../../Foundation") == false then
+            git.clone("https://github.com/lai001/Foundation.git", {branch = "main", outputdir = "../../Foundation"})
+        end
+        os.cd(oldir)
+    end)
+
 
 rule("KSImage.CompileShader")
     on_load(function (target)
@@ -67,19 +78,38 @@ rule("KSImage.Copy.shaderc")
     end)
 
 target("KSImage")
-    set_kind("static")
+    set_kind("$(kind)")
     set_languages("c++17")
     add_files("./**.cpp")
     add_headerfiles("./**.h", "./**.hpp")
     add_includedirs("include/KSImage")
-    add_includedirs("../../Foundation/Foundation/include")
+    add_includedirs("include", {interface = true})
     add_syslinks("d3d11")
     add_rules("mode.debug", "mode.release")
     add_rules("KSImage.Copy.shaderc")
     add_rules("KSImage.CompileShader")
     add_rules("KSImage.Copy")
+    add_rules("KSImage.deps")
     add_packages("bgfx")
     add_packages("spdlog")
-    add_packages("stb")
+    -- add_packages("stb")
     add_packages("glm")
     add_deps("Foundation")
+    if is_kind("shared") and is_plat("windows") then
+        add_defines("KSImage_BUILD_DLL_EXPORT")
+    end
+    on_config(function (target)
+        import("core.project.project")
+        for _targetname, _target in pairs(project.targets()) do
+            local depsType = type(_target:get("deps"))
+            local deps = nil;
+            if depsType == "table" then
+                deps = _target:get("deps")
+            elseif depsType == "string" then
+                deps = {_target:get("deps")}
+            end
+            if deps and table.contains(deps, "KSImage") and target:kind() == "shared" and target:is_plat("windows") then
+                _target:add("defines", "KSImage_DLL")
+            end
+        end
+    end)

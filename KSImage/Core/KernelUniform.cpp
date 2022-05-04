@@ -12,15 +12,8 @@ namespace ks
 		dic[KernelUniform::ValueType::mat3] = bgfx::UniformType::Enum::Mat3;
 		dic[KernelUniform::ValueType::mat4] = bgfx::UniformType::Enum::Mat4;
 		dic[KernelUniform::ValueType::texture2d] = bgfx::UniformType::Enum::Sampler;
-
-		if (dic.find(type) == dic.end())
-		{
-			assert(false);
-		}
-		else
-		{
-			return dic[type];
-		}
+		assert(dic.find(type) != dic.end());
+		return dic[type];
 	}
 
 	KernelUniform::KernelUniform(const std::string & name, const ValueType & type)
@@ -33,16 +26,6 @@ namespace ks
 		:name(Info.name), type(Info.type), u_handle(bgfx::createUniform(Info.name.c_str(), getBgfxType(Info.type), 1))
 	{
 		assert(bgfx::isValid(u_handle));
-	}
-
-	std::shared_ptr<KernelUniform> KernelUniform::create(const std::string & name, const ValueType & type) noexcept
-	{
-		return std::make_shared<KernelUniform>(name, type);
-	}
-
-	std::shared_ptr<KernelUniform> KernelUniform::create(const Info & Info) noexcept
-	{
-		return std::make_shared<KernelUniform>(Info);
 	}
 
 	KernelUniform::~KernelUniform()

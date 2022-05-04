@@ -11,10 +11,9 @@ namespace ks
 		}
 	}
 
-	std::shared_ptr<KernelTexture2D> KernelTexture2D::createPlaceHolder(/*const Info& info*/) noexcept
+	KernelTexture2D* KernelTexture2D::createPlaceHolder(/*const Info& info*/) noexcept
 	{
-		 std::shared_ptr<KernelTexture2D> ptr = std::make_shared<KernelTexture2D>();
-		 return ptr;
+		 return new KernelTexture2D();
 	}
 
 	void KernelTexture2D::copyImage(const std::shared_ptr<ks::Image> image) noexcept
@@ -34,7 +33,7 @@ namespace ks
 			const int channels = image->getSourceChannels();
 			//const bgfx::Memory* memoryRef = bgfx::makeRef(data, width * height * channels, nullptr, nullptr);
 			const bgfx::Memory* memoryRef = bgfx::copy(data, width * height * channels);
-			textureHandle = bgfx::createTexture2D(width, height, false, 1, chooseFormat(channels), BGFX_TEXTURE_NONE | BGFX_SAMPLER_NONE, memoryRef);
+			textureHandle = bgfx::createTexture2D(width, height, false, 1, chooseFormat(image->getImageFormat()), BGFX_TEXTURE_NONE | BGFX_SAMPLER_NONE, memoryRef);
 			assert(bgfx::isValid(textureHandle));
 		}
 		else
@@ -43,7 +42,7 @@ namespace ks
 		}
 	}
 
-	void KernelTexture2D::copyPixelBuffer(const std::shared_ptr<ks::PixelBuffer> pixelBuffer) noexcept
+	void KernelTexture2D::copyPixelBuffer(const ks::PixelBuffer& pixelBuffer) noexcept
 	{
 		if (bgfx::isValid(textureHandle))
 		{
@@ -51,16 +50,16 @@ namespace ks
 			textureHandle = BGFX_INVALID_HANDLE;
 		}
 
-		const void* data = pixelBuffer->getImmutableData();
+		const void* data = pixelBuffer.getImmutableData()[0];
 
 		if (data)
 		{
-			const int width = pixelBuffer->getWidth();
-			const int height = pixelBuffer->getHeight();
-			const int channels = pixelBuffer->getChannels();
+			const int width = pixelBuffer.getWidth();
+			const int height = pixelBuffer.getHeight();
+			const int channels = pixelBuffer.getChannels();
 			//const bgfx::Memory* memoryRef = bgfx::makeRef(data, width * height * channels, nullptr, nullptr);
 			const bgfx::Memory* memoryRef = bgfx::copy(data, width * height * channels);
-			textureHandle = bgfx::createTexture2D(width, height, false, 1, chooseFormat(channels), BGFX_TEXTURE_NONE | BGFX_SAMPLER_NONE, memoryRef);
+			textureHandle = bgfx::createTexture2D(width, height, false, 1, chooseFormat(pixelBuffer.getType()), BGFX_TEXTURE_NONE | BGFX_SAMPLER_NONE, memoryRef);
 			assert(bgfx::isValid(textureHandle));
 		}
 		else
@@ -83,5 +82,25 @@ namespace ks
 		dic[3] = bgfx::TextureFormat::RGB8;
 		dic[4] = bgfx::TextureFormat::RGBA8;
 		return dic[channelCount];
+	}
+
+	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const ks::PixelBuffer::FormatType formatType) const noexcept
+	{
+		std::unordered_map<ks::PixelBuffer::FormatType, bgfx::TextureFormat::Enum> dic;
+		dic[ks::PixelBuffer::FormatType::rgb8] = bgfx::TextureFormat::RGB8;
+		dic[ks::PixelBuffer::FormatType::rgba8] = bgfx::TextureFormat::RGBA8;
+		dic[ks::PixelBuffer::FormatType::gray8] = bgfx::TextureFormat::R8;
+		dic[ks::PixelBuffer::FormatType::bgra8] = bgfx::TextureFormat::BGRA8;
+		assert(dic.end() != dic.find(formatType));
+		return dic[formatType];
+	}
+
+	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const ks::Image::FormatType formatType) const noexcept
+	{
+		std::unordered_map<ks::Image::FormatType, bgfx::TextureFormat::Enum> dic;
+		dic[ks::Image::FormatType::rgb8] = bgfx::TextureFormat::RGB8;
+		dic[ks::Image::FormatType::rgba8] = bgfx::TextureFormat::RGBA8;
+		assert(dic.end() != dic.find(formatType));
+		return dic[formatType];
 	}
 }

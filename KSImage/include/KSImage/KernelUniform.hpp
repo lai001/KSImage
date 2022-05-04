@@ -6,10 +6,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Image.hpp"
+#include "defs.hpp"
 
 namespace ks
 {
-	class KernelUniform : public boost::noncopyable
+	class KSImage_API KernelUniform : public boost::noncopyable
 	{
 	public:
 		enum class ValueType
@@ -150,19 +151,15 @@ namespace ks
 		std::string name;
 		ValueType type;
 		bgfx::UniformHandle u_handle = BGFX_INVALID_HANDLE;
+
 	public:
 		KernelUniform(const std::string& name, const ValueType& type);
 		KernelUniform(const Info& Info);
-
-		static std::shared_ptr<KernelUniform> create(const std::string& name, const ValueType& type) noexcept;
-		static std::shared_ptr<KernelUniform> create(const Info& Info) noexcept;
 		~KernelUniform();
 		void setValue(const Value& value) noexcept;
 		std::string getName() const noexcept;
 		ks::KernelUniform::ValueType getType() const noexcept;
-
 		bgfx::UniformHandle getHandle() const noexcept;
-
 	};
 }
 

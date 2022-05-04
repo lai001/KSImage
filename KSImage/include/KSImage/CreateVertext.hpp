@@ -3,15 +3,11 @@
 
 #include <functional>
 #include <bgfx/bgfx.h>
+#include "defs.hpp"
 
 namespace ks
 {
-	static bgfx::VertexLayout createVertextLayout(std::function<void(bgfx::VertexLayout&)> closure)
-	{
-		bgfx::VertexLayout layout;
-		closure(layout);
-		return layout;
-	}
+	bgfx::VertexLayout KSImage_API createVertextLayout(std::function<void(bgfx::VertexLayout&)> closure) noexcept;
 }
 
 #endif // !VERTEXCREATE_Hpp
