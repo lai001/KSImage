@@ -39,7 +39,7 @@ namespace ks
 		return rect;
 	}
 
-	Rect KSImage_API makeRect(const float aspectWidthRatio, const float aspectHeightRatio, const Rect & boundingRect) noexcept
+	Rect KSImage_API makeRectAspectFit(const float aspectWidthRatio, const float aspectHeightRatio, const Rect & boundingRect) noexcept
 	{
 		float widthScale = boundingRect.width / aspectWidthRatio;
 		float heightScale = boundingRect.height / aspectHeightRatio;

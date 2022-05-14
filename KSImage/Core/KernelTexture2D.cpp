@@ -68,6 +68,16 @@ namespace ks
 		}
 	}
 
+	void KernelTexture2D::copyTextureHandle(bgfx::TextureHandle handle) noexcept
+	{
+		if (bgfx::isValid(textureHandle))
+		{
+			bgfx::destroy(textureHandle);
+			textureHandle = BGFX_INVALID_HANDLE;
+		}
+		textureHandle = handle;
+	}
+
 	void KernelTexture2D::bind(const uint8_t stage, const bgfx::UniformHandle& uniformHandle) const noexcept
 	{
 		assert(bgfx::isValid(textureHandle));
@@ -75,7 +85,7 @@ namespace ks
 		bgfx::setTexture(stage, uniformHandle, textureHandle, BGFX_SAMPLER_UVW_CLAMP | BGFX_SAMPLER_MIN_POINT | BGFX_SAMPLER_MAG_POINT);
 	}
 
-	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const int channelCount) const noexcept
+	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const int channelCount) noexcept
 	{
 		assert(channelCount == 3 || channelCount == 4);
 		std::unordered_map<int, bgfx::TextureFormat::Enum> dic;
@@ -84,7 +94,7 @@ namespace ks
 		return dic[channelCount];
 	}
 
-	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const ks::PixelBuffer::FormatType formatType) const noexcept
+	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const ks::PixelBuffer::FormatType formatType) noexcept
 	{
 		std::unordered_map<ks::PixelBuffer::FormatType, bgfx::TextureFormat::Enum> dic;
 		dic[ks::PixelBuffer::FormatType::rgb8] = bgfx::TextureFormat::RGB8;
@@ -95,12 +105,17 @@ namespace ks
 		return dic[formatType];
 	}
 
-	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const ks::Image::FormatType formatType) const noexcept
+	bgfx::TextureFormat::Enum KernelTexture2D::chooseFormat(const ks::Image::FormatType formatType) noexcept
 	{
 		std::unordered_map<ks::Image::FormatType, bgfx::TextureFormat::Enum> dic;
 		dic[ks::Image::FormatType::rgb8] = bgfx::TextureFormat::RGB8;
 		dic[ks::Image::FormatType::rgba8] = bgfx::TextureFormat::RGBA8;
 		assert(dic.end() != dic.find(formatType));
 		return dic[formatType];
+	}
+
+	bgfx::TextureHandle KernelTexture2D::getTextureHandle() const noexcept
+	{
+		return textureHandle;
 	}
 }

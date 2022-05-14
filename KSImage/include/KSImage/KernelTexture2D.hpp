@@ -20,12 +20,15 @@ namespace ks
 
 		void copyImage(const std::shared_ptr<ks::Image> image) noexcept;
 		void copyPixelBuffer(const ks::PixelBuffer& pixelBuffer) noexcept;
+		void copyTextureHandle(bgfx::TextureHandle handle) noexcept;
 
 		void bind(const uint8_t stage, const bgfx::UniformHandle& uniformHandle) const noexcept;
 
-		bgfx::TextureFormat::Enum chooseFormat(const int channelCount) const noexcept;
-		bgfx::TextureFormat::Enum chooseFormat(const ks::PixelBuffer::FormatType formatType) const noexcept;
-		bgfx::TextureFormat::Enum chooseFormat(const ks::Image::FormatType formatType) const noexcept;
+		static bgfx::TextureFormat::Enum chooseFormat(const int channelCount) noexcept;
+		static bgfx::TextureFormat::Enum chooseFormat(const ks::PixelBuffer::FormatType formatType) noexcept;
+		static bgfx::TextureFormat::Enum chooseFormat(const ks::Image::FormatType formatType) noexcept;
+
+		bgfx::TextureHandle getTextureHandle() const noexcept;
 	};
 }
 

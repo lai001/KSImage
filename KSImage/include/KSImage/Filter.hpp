@@ -11,44 +11,10 @@
 
 namespace ks
 {
-
 	struct KSImage_API KernelRenderInstruction
 	{
-	private:
-		std::vector<ks::Rect> sampleSapceRects;
-		ks::Rect renderRect;
-
 	public:
-		void accept(const std::vector<std::shared_ptr<ks::Image>>& images, const ks::Rect renderRect) noexcept
-		{
-			this->renderRect = renderRect;
-			sampleSapceRects.clear();
-			for (const auto& image : images)
-			{
-				Rect sampleSapceRect;
-				const Rect rect = image->getRect();
-				sampleSapceRect.width = (rect.width / renderRect.width);
-				sampleSapceRect.height = (rect.height / renderRect.height);
-				sampleSapceRect.x = (rect.x - renderRect.x) / renderRect.width;
-				sampleSapceRect.y = 1.0 - (rect.getMaxY() / renderRect.height); // To Bottom-Left
-				sampleSapceRects.push_back(sampleSapceRect);
-			}
-		}
-
-		glm::vec2 getWorkingSpacePixelSize() const noexcept
-		{
-			return glm::vec2(renderRect.width, renderRect.height);
-		}
-
-		std::vector<glm::vec4> getSampleSapceRects() const noexcept
-		{
-			std::vector<glm::vec4> vec;
-			for (auto item : sampleSapceRects)
-			{
-				vec.push_back(glm::vec4(item.x, item.y, item.getMaxX(), item.getMaxY()));
-			}
-			return vec;
-		}
+		std::vector<glm::vec4> sampleSapceRectsNorm;
 	};
 
 	class KSImage_API Filter: public boost::noncopyable
@@ -65,6 +31,8 @@ namespace ks
 		std::shared_ptr<ks::Kernel> getKernel() const noexcept;
 		std::vector<ks::KernelUniform::Value> getUniformValues() const noexcept;
 		std::vector<std::shared_ptr<ks::Image>> getInputImages() const noexcept;
+		
+		const std::shared_ptr<ks::Image> getCurrentOutputImage() const noexcept;
 	};
 }
 

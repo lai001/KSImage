@@ -113,3 +113,5 @@ target("KSImage")
             end
         end
     end)
+
+target("Foundation")

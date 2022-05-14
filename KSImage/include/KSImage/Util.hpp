@@ -23,7 +23,7 @@ namespace ks
 	Rect KSImage_API getUnionRect(const std::vector<ks::Image>& images) noexcept;
 	Rect KSImage_API getUnionRect(const std::vector<std::shared_ptr<ks::Image>>& images) noexcept;
 
-	Rect KSImage_API makeRect(const float aspectWidthRatio, const float aspectHeightRatio, const Rect& boundingRect) noexcept;
+	Rect KSImage_API makeRectAspectFit(const float aspectWidthRatio, const float aspectHeightRatio, const Rect& boundingRect) noexcept;
 
 	ks::RectTransDescription KSImage_API convertToNDC(const ks::RectTransDescription& des) noexcept;
 

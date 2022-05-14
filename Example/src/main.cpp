@@ -15,14 +15,25 @@
 
 std::unique_ptr<ImageDecoder> imageDecoder = std::make_unique<ImageDecoder>();
 
-struct DataSource
+struct Transform
 {
-	float intensity = 0.5;
 	float angle = 0.0;
 	glm::vec2 offset = glm::vec2(0.0, 0.0);
 	float scale = 1.0;
+};
+
+struct DataSource
+{
+	float intensity = 0.5;
+	Transform transform0;
+	Transform transform1;
 	bool isSaveImage = false;
-	bool option0 = false;
+	bool isEnableDraw = true;
+
+	DataSource()
+	{
+	}
+
 } dataSouce;
 
 static std::unique_ptr<WindowsPlatform> windowsPlatformPtr;
@@ -57,16 +68,22 @@ void ImGuiDraw()
 	ImGui::Begin("Debug");
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::NewLine();
 	ImGui::SliderFloat("Intensity", &dataSouce.intensity, 0.0, 1.0);
-	ImGui::DragFloat("Angle", &dataSouce.angle);
-	ImGui::DragFloat("Scale", &dataSouce.scale, 0.01, 0.1, 3.0);
-	ImGui::DragFloat2("Offset", glm::value_ptr(dataSouce.offset));
+	ImGui::NewLine();
+	ImGui::DragFloat("Angle", &dataSouce.transform0.angle);
+	ImGui::DragFloat("Scale", &dataSouce.transform0.scale, 0.01, 0.1, 3.0);
+	ImGui::DragFloat2("Offset", glm::value_ptr(dataSouce.transform0.offset));
+	ImGui::NewLine();
+	ImGui::DragFloat("Angle1", &dataSouce.transform1.angle);
+	ImGui::DragFloat("Scale1", &dataSouce.transform1.scale, 0.01, 0.1, 3.0);
+	ImGui::DragFloat2("Offset1", glm::value_ptr(dataSouce.transform1.offset));
 
 	if (ImGui::Button("Save"))
 	{
 		dataSouce.isSaveImage = true;
 	}
-	ImGui::Checkbox("Option0", &dataSouce.option0);
+	ImGui::Checkbox("IsEnableDraw", &dataSouce.isEnableDraw);
 	ImGui::End();
 }
 
@@ -76,35 +93,46 @@ void ImGuiDestroy()
 	imguiDestroy();
 }
 
-void frameTick() noexcept
+void frameTick()
 {
 	static std::shared_ptr<ks::Image> inputImage = ks::Image::create(ks::Application::getResourcePath("cat.jpg"));
 	static std::shared_ptr<ks::Image> inputTargetImage = ks::Image::create(ks::Application::getResourcePath("environmental.jpg"));
-	//static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter = ks::MixTwoImageFilter::create();
-	//mixTwoImageFilter->inputImage = inputImage;
-	//mixTwoImageFilter->inputTargetImage = inputTargetImage;
-	//mixTwoImageFilter->u_intensity = dataSouce.intensity;
-	static std::shared_ptr<ks::TransformFilter> transformFilter = ks::TransformFilter::create();
-	transformFilter->inputImage = inputImage;
-	transformFilter->transform = ks::RectTransDescription(inputImage->getRect())
-		.scaleAroundCenter(glm::vec2(dataSouce.scale))
-		.rotateAroundCenter(glm::radians<float>(dataSouce.angle))
-		.translate(dataSouce.offset)
+
+	static std::shared_ptr<ks::TransformFilter> transformFilter0 = ks::TransformFilter::create();
+	transformFilter0->inputImage = inputImage;
+	transformFilter0->transform = ks::RectTransDescription(inputImage->getRect())
+		.scaleAroundCenter(glm::vec2(dataSouce.transform0.scale))
+		.rotateAroundCenter(glm::radians<float>(dataSouce.transform0.angle))
+		.translate(dataSouce.transform0.offset)
 		.getTransform();
-	
-	std::shared_ptr<ks::Image> outputImage = transformFilter->outputImage();
+
+	static std::shared_ptr<ks::TransformFilter> transformFilter1 = ks::TransformFilter::create();
+	transformFilter1->inputImage = inputTargetImage;
+	transformFilter1->transform = ks::RectTransDescription(inputTargetImage->getRect())
+		.scaleAroundCenter(glm::vec2(dataSouce.transform1.scale))
+		.rotateAroundCenter(glm::radians<float>(dataSouce.transform1.angle))
+		.translate(dataSouce.transform1.offset)
+		.getTransform();
+
+	static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter0 = ks::MixTwoImageFilter::create();
+	mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
+	mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
+	mixTwoImageFilter0->u_intensity = dataSouce.intensity;
+
 	static std::unique_ptr<ks::FilterContext> context = std::unique_ptr<ks::FilterContext>(ks::FilterContext::create());
-	std::unique_ptr<ks::PixelBuffer> bufferPtr = std::unique_ptr<ks::PixelBuffer>(context->render(outputImage.get(), ks::Rect(0.0, 0.0, 1280.0, 720.0)/*des.getBound()*//*ks::Rect(-728.0/2.0, 0.0, 728.0, 200.0)*/));
+
+	std::unique_ptr<ks::PixelBuffer> bufferPtr = std::unique_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage().get(), ks::Rect(0.0, 0.0, 1280.0, 720.0)));
+
 	if (dataSouce.isSaveImage)
 	{
 		unsigned char* data = reinterpret_cast<unsigned char*>(bufferPtr->getMutableData()[0]);
 		std::string targetPath = fmt::format("{}/{}.png", ks::Application::getAppDir(), "KSImage");
 		int writeStatus = stbi_write_png(targetPath.c_str(), bufferPtr->getWidth(), bufferPtr->getHeight(), bufferPtr->getChannels(), data, bufferPtr->getWidth() * bufferPtr->getChannels());
-		spdlog::debug(targetPath);
+		spdlog::debug("{}, {}", bool(writeStatus), targetPath);
 		dataSouce.isSaveImage = false;
 	}
 
-	constexpr bool isDraw = true;
+	bool isDraw = dataSouce.isEnableDraw;
 	bgfx::ViewId mainViewId = 0;
 	bgfx::touch(mainViewId);
 	bgfx::setViewRect(mainViewId, 0, 0, currentWindowWidth, currentWindowHeight);
@@ -112,16 +140,15 @@ void frameTick() noexcept
 	bgfx::setViewFrameBuffer(mainViewId, BGFX_INVALID_HANDLE);
 	if (isDraw)
 	{
-		//bgfx::reset(kDefaultWidth, kDefaultHeight, BGFX_RESET_FLUSH_AFTER_RENDER, bgfx::TextureFormat::RGBA8);
 		static std::shared_ptr<ks::Kernel> kernel = ks::Kernel::create("image", { ks::KernelUniform::Info("s_texColor", ks::KernelUniform::ValueType::texture2d) });
 		const std::vector<unsigned int> indices = {
 			0, 1, 2,
 			1, 2, 3
 		};
-		const ks::Rect fitRect = ks::makeRect(bufferPtr->getWidth(), bufferPtr->getHeight(), ks::Rect(0.0, 0.0, currentWindowWidth, currentWindowHeight));
+		const ks::Rect fitRect = ks::makeRectAspectFit(bufferPtr->getWidth(), bufferPtr->getHeight(), ks::Rect(0.0, 0.0, currentWindowWidth, currentWindowHeight));
 		ks::RectTransDescription des(fitRect);
 		des = ks::convertToNDC(des, ks::Rect(0.0, 0.0, currentWindowWidth, currentWindowHeight));
-		
+
 		kernel->bindIndices(indices);
 		const std::vector<ks::ImageVertex> vertexs = {
 			ks::ImageVertex(glm::vec3(des.getQuad().topLeft, 1.0), glm::vec2(0.0, 0.0)), // Top-Left

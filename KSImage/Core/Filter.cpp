@@ -28,20 +28,38 @@ namespace ks
 
 	KernelRenderInstruction Filter::onPrepare(const ks::Rect& renderRect)
 	{
-		KernelRenderInstruction instruction;
-		instruction.accept(getInputImages(), renderRect);
-
 		kernel->setIndices(std::vector<unsigned int >{
 			0, 1, 2, 1, 2, 3
 		});
 		
 		std::vector<ks::ImageVertex> vertexs = {
-			ks::ImageVertex(glm::vec3(-1.0,  1.0, 1.0), glm::vec2(0.0, 0.0)), // Top-Left
-			ks::ImageVertex(glm::vec3( 1.0,  1.0, 1.0), glm::vec2(1.0, 0.0)), // Top-Right
-			ks::ImageVertex(glm::vec3(-1.0, -1.0, 1.0), glm::vec2(0.0, 1.0)), // Bottom-Left
-			ks::ImageVertex(glm::vec3( 1.0, -1.0, 1.0), glm::vec2(1.0, 1.0)), // Bottom-Right
+			ks::ImageVertex(glm::vec3(-1.0,  1.0, 1.0), glm::vec2(0.0, 0.0)),
+			ks::ImageVertex(glm::vec3( 1.0,  1.0, 1.0), glm::vec2(1.0, 0.0)),
+			ks::ImageVertex(glm::vec3(-1.0, -1.0, 1.0), glm::vec2(0.0, 1.0)),
+			ks::ImageVertex(glm::vec3( 1.0, -1.0, 1.0), glm::vec2(1.0, 1.0)),
 		};
 		kernel->setVertex(vertexs.data(), vertexs.size() * sizeof(ks::ImageVertex), ImageVertex::vertexLayout);
+
+		KernelRenderInstruction instruction;
+		const std::vector<std::shared_ptr<ks::Image>>& inputImages = getInputImages();
+		for (const std::shared_ptr<ks::Image>& inputImage : inputImages)
+		{
+			Rect sampleSapceRectNorm;
+			const Rect rect = inputImage->getRect();
+			sampleSapceRectNorm.width = (rect.width / renderRect.width);
+			sampleSapceRectNorm.height = (rect.height / renderRect.height);
+			sampleSapceRectNorm.x = (rect.x - renderRect.x) / renderRect.width;
+			sampleSapceRectNorm.y = (rect.y - renderRect.y) / renderRect.height;
+
+			glm::vec4 sampleSapceRectNormTopLeft;
+			sampleSapceRectNormTopLeft.x = sampleSapceRectNorm.x;
+			sampleSapceRectNormTopLeft.z = sampleSapceRectNorm.getMaxX();
+
+			sampleSapceRectNormTopLeft.y = 1.0 - (sampleSapceRectNorm.y + sampleSapceRectNorm.height);
+			sampleSapceRectNormTopLeft.w = sampleSapceRectNormTopLeft.y + sampleSapceRectNorm.height;
+
+			instruction.sampleSapceRectsNorm.push_back(sampleSapceRectNormTopLeft);
+		}
 		return instruction;
 	}
 
@@ -72,5 +90,10 @@ namespace ks
 			}
 		}
 		return images;
+	}
+
+	const std::shared_ptr<ks::Image> Filter::getCurrentOutputImage() const noexcept
+	{
+		return currentOutputImage;
 	}
 }

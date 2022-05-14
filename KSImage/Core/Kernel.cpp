@@ -158,6 +158,24 @@ void main()
 		assert(isFindTexture2D && "Don't find Texture2D");
 	}
 
+	void Kernel::bindTexture2D(const std::string & name, const bgfx::TextureHandle textureHandle) noexcept
+	{
+		bool isFindTexture2D = false;
+
+		for (auto& uniform : uniforms)
+		{
+			if (uniform->getName() == name)
+			{
+				kernel_texture2ds[name]->copyTextureHandle(textureHandle);
+				kernel_texture2ds[name]->bind(_stage, uniform->getHandle());
+				_stage += 1;
+				_stage %= maxStage;
+				isFindTexture2D = true;
+			}
+		}
+		assert(isFindTexture2D && "Don't find Texture2D");
+	}
+
 	void Kernel::bindUniform(const std::string & name, const ks::KernelUniform::Value & value) noexcept
 	{
 		bool isFindUniform = false;

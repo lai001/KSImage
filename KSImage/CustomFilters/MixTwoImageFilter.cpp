@@ -14,6 +14,7 @@ namespace ks
 
 kernel vec4 fragmentShader(BgfxSampler2D inputImage, float intensity, BgfxSampler2D inputTargetImage)
 {
+
 	vec2 uv = ks_destCoord();
 	vec4 color0 = ks_texture2DBorder(inputImage, ks_sampler0Transform());
 	vec4 color1 = ks_texture2DBorder(inputTargetImage, ks_sampler1Transform());

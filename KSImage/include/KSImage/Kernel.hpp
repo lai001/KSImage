@@ -45,6 +45,7 @@ namespace ks
 
 		void bindTexture2D(const std::string& name, const std::shared_ptr<ks::Image> image) noexcept;
 		void bindTexture2D(const std::string& name, const ks::PixelBuffer& pixelBuffer) noexcept;
+		void bindTexture2D(const std::string& name, const bgfx::TextureHandle textureHandle) noexcept;
 		void bindUniform(const std::string& name, const ks::KernelUniform::Value& value) noexcept;
 
 		const ShaderProgram* getProgram() const noexcept;
