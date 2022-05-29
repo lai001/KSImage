@@ -1,5 +1,5 @@
-#ifndef IImageDecoder_hpp
-#define IImageDecoder_hpp
+#ifndef KSImage_ImageDecoder_hpp
+#define KSImage_ImageDecoder_hpp
 
 #include <Foundation/Foundation.hpp>
 #include "defs.hpp"
@@ -16,4 +16,4 @@ namespace ks
 }
 
 
-#endif // !IImageDecoder_hpp
+#endif // !KSImage_ImageDecoder_hpp

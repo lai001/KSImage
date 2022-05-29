@@ -1,8 +1,7 @@
-#ifndef IMAGEVERTEX_H
-#define IMAGEVERTEX_H
+#ifndef KSImage_ImageVertex_hpp
+#define KSImage_ImageVertex_hpp
 
 #include <glm/glm.hpp>
-#include <bgfx/bgfx.h>
 #include "defs.hpp"
 
 namespace ks
@@ -11,9 +10,8 @@ namespace ks
 	{
 		glm::vec3 position;
 		glm::vec2 texcoord;
-		static bgfx::VertexLayout vertexLayout;
 
-		explicit ImageVertex(const glm::vec3 position, const glm::vec2 texcoord)
+		explicit ImageVertex(const glm::vec3& position, const glm::vec2& texcoord)
 			:position(position), texcoord(texcoord)
 		{
 		}
@@ -25,4 +23,4 @@ namespace ks
 	};
 }
 
-#endif // !IMAGEVERTEX_H
+#endif // !KSImage_ImageVertex_hpp

@@ -1,10 +1,10 @@
 #ifndef IMAGEDECODERHPP
 #define IMAGEDECODERHPP
 
-#include <stb_image_write.h>
-#include <stb_image.h>
-#include <Foundation/Foundation.hpp>
+//#include <stb_image_write.h>
+//#include <stb_image.h>
 #include <KSImage/KSImage.hpp>
+
 
 class ImageDecoder : public ks::IImageDecoder
 {

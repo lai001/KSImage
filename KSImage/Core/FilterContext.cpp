@@ -1,46 +1,43 @@
 #include "FilterContext.hpp"
 #include <spdlog/spdlog.h>
 #include "FragmentAnalysis.hpp"
-#include "FrameBuffer.hpp"
 #include "Util.hpp"
 #include "Filter.hpp"
 
 namespace ks
 {
-	unsigned int FilterContext::frameNumber;
+	struct IFrameBufferDeletor {
+		void operator()(IFrameBuffer* p) const
+		{
+			Kernel::renderEngine->erase(p);
+		}
+	};
+
+	struct ITexture2DDeletor
+	{
+		void operator()(ITexture2D* p) const
+		{
+			Kernel::renderEngine->erase(p);
+		}
+	};
 
 	FilterContext* FilterContext::create() noexcept
 	{
 		return new FilterContext();
 	}
 
-	void FilterContext::Init(const bgfx::Init& init, void* nwh) noexcept
+#ifdef _WIN32
+	void FilterContext::Init(const ks::D3D11RenderEngineCreateInfo & info) noexcept
 	{
-		bgfx::PlatformData pd;
-		memset(&pd, 0, sizeof(pd));
-		pd.nwh = nwh;
-		bgfx::setPlatformData(pd);
-
-		bool isbgfxInitSuccess = bgfx::init(init);
-		assert(isbgfxInitSuccess);
-		bgfx::setDebug(BGFX_DEBUG_NONE);
+		assert(ks::Kernel::renderEngine == nullptr);
+		ks::Kernel::renderEngine = ks::RenderEngine::create(info);
 	}
+#endif
 
-	void FilterContext::Init(void* nwh, const unsigned int width, const unsigned int height) noexcept
+	void FilterContext::Init(const ks::GLRenderEngineCreateInfo & info) noexcept
 	{
-		bgfx::Init init;
-		init.type = bgfx::RendererType::Enum::Count;
-		init.vendorId = BGFX_PCI_ID_NONE;
-		init.resolution.width = width;
-		init.resolution.height = height;
-		init.resolution.reset = BGFX_RESET_VSYNC;
-		FilterContext::Init(init, nwh);
-	}
-
-	void FilterContext::shutdown() noexcept
-	{
-		// FIXME:
-		// bgfx::shutdown();
+		assert(ks::Kernel::renderEngine == nullptr);
+		ks::Kernel::renderEngine = ks::RenderEngine::create(info);
 	}
 }
 
@@ -78,117 +75,108 @@ namespace ks
 		}
 	}
 
-	std::shared_ptr<ks::FrameBuffer> render(ks::Filter* filter, std::vector<bgfx::TextureHandle> textureHandles, const ks::Rect& renderRect, bgfx::ViewId& ioFramebufferViewId)
+	std::shared_ptr<ks::IFrameBuffer> render(ks::Filter* filter, 
+		std::vector<ks::ITexture2D*> textureHandles,
+		const ks::Rect& renderRect)
 	{
+		assert(ks::Kernel::renderEngine);
 		assert(filter);
-		const bgfx::ViewId mainViewId = 0;
-		bgfx::touch(ioFramebufferViewId);
-		std::shared_ptr<ks::FrameBuffer> frameBuffer = std::make_shared<ks::FrameBuffer>(renderRect.width, renderRect.height);
-		bgfx::setViewRect(ioFramebufferViewId, 0, 0, frameBuffer->width, frameBuffer->height);
-		bgfx::setViewFrameBuffer(ioFramebufferViewId, frameBuffer->m_FrameBufferHandle);
-		bgfx::setViewClear(ioFramebufferViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x00000000, 1.0f, 0);
+		std::shared_ptr<ks::Kernel> kernel = filter->getKernel();
+		const KernelRenderInstruction renderInstruction = filter->onPrepare(renderRect);
+		assert(kernel);
 
+		ks::IRenderEngine& renderEngine = *ks::Kernel::renderEngine;
+
+		std::shared_ptr<ks::IFrameBuffer> frameBuffer = std::shared_ptr<ks::IFrameBuffer>(renderEngine.createFrameBuffer(renderRect.width, renderRect.height), IFrameBufferDeletor());
+
+		kernel->setUniform(filter->getUniformValues(), [textureHandles, renderInstruction](unsigned int index, glm::vec4* sampleSapceRectsNorm)
 		{
-			const KernelRenderInstruction renderInstruction = filter->onPrepare(renderRect);
-			bgfx::setVertexBuffer(0, filter->getKernel()->getVertexBufferHandle());
-			bgfx::setIndexBuffer(filter->getKernel()->getIndexBufferHandle());
+			*sampleSapceRectsNorm = renderInstruction.sampleSapceRectsNorm[index];
+			return textureHandles[index];
+		});
 
-			int textureHandlesIndex = 0;
+		kernel->commit(frameBuffer);
 
-			for (int i = 0; i < filter->getKernel()->getUniforms().size(); i++)
-			{
-				const int inputValuesCount = filter->getUniformValues().size();
-				if (i >= inputValuesCount)
-				{
-					break;
-				}
-				const ks::KernelUniform* kernelUniform = filter->getKernel()->getUniforms()[i];
-				const ks::KernelUniform::Value value = filter->getUniformValues()[i];
-				assert(value.type == kernelUniform->getType() && "Input value type must equal to unifom type");
-				if (kernelUniform->getType() == ks::KernelUniform::ValueType::texture2d)
-				{
-					bgfx::TextureHandle handle = textureHandles[textureHandlesIndex];
-					textureHandlesIndex += 1;
-					if (bgfx::isValid(handle))
-					{
-						filter->getKernel()->bindTexture2D(kernelUniform->getName(), handle);
-					}
-				}
-				else
-				{
-					filter->getKernel()->bindUniform(kernelUniform->getName(), value);
-				}
-			}
-			const ks::FragmentAnalysis::ShareInfo shareInfo;
-			
-			filter->getKernel()->bindUniform(shareInfo.workingSpacePixelSizeUniformName(), KernelUniform::Value(glm::vec2(renderRect.width, renderRect.height)));
-			const std::vector<glm::vec4> sampleSapceRectsNorm = renderInstruction.sampleSapceRectsNorm;
-			for (int number = 0; number < sampleSapceRectsNorm.size(); number++)
-			{
-				filter->getKernel()->bindUniform(shareInfo.uniformSamplerSpaceName(number),
-					KernelUniform::Value(sampleSapceRectsNorm[number]));
-			}
-
-			bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A);
-			bgfx::submit(ioFramebufferViewId, filter->getKernel()->getBgfxProgram());
-			ioFramebufferViewId += 1;
-		}
-		assert(bgfx::isValid(frameBuffer->m_rb));
-		//bgfx::setViewFrameBuffer(ioFramebufferViewId, BGFX_INVALID_HANDLE);
 		return frameBuffer;
 	}
 
-	std::shared_ptr<ks::FrameBuffer> _walk(FilterChainNode rootNode, const ks::Rect& renderRect, bgfx::ViewId& ioFramebufferViewId)
+	std::shared_ptr<ks::IFrameBuffer> _walk(FilterChainNode rootNode,
+		const ks::Rect& renderRect)
 	{
-		std::vector<bgfx::TextureHandle> textureHandles;
+		assert(ks::Kernel::renderEngine);
+		ks::IRenderEngine& renderEngine = *ks::Kernel::renderEngine;
+
+		std::vector<ks::ITexture2D*> textureHandles;
+		std::vector<std::shared_ptr<ks::IFrameBuffer>> childBuffers;
+
+		std::function<void()> cleanClosure = std::function<void()>(); 
 
 		for (FilterChainNode childNode : rootNode.childNodes)
 		{
-			std::shared_ptr<ks::FrameBuffer> childBuffer = _walk(childNode, renderRect, ioFramebufferViewId);
-			bgfx::TextureHandle childHandle = bgfx::getTexture(childBuffer->m_FrameBufferHandle);
+			std::shared_ptr<ks::IFrameBuffer> childBuffer = _walk(childNode, renderRect);
+			ks::ITexture2D* childHandle = childBuffer->getColorTexture();
 			textureHandles.push_back(childHandle);
+			childBuffers.push_back(childBuffer);
 		}
 
 		if (textureHandles.empty())
 		{
 			for (std::shared_ptr<ks::Image> image : rootNode.filter->getInputImages())
 			{
-				const void* data = image->getData();
+				const unsigned char *data = image->getData();
 				assert(data);
 				const int width = image->getSourceWidth();
 				const int height = image->getSourceHeight();
-				const int channels = image->getSourceChannels();
-				const bgfx::Memory* memoryRef = bgfx::copy(data, width * height * channels);
-				bgfx::TextureHandle textureHandle = bgfx::createTexture2D(width, height, false, 1, ks::KernelTexture2D::chooseFormat(image->getImageFormat()), BGFX_TEXTURE_NONE | BGFX_SAMPLER_NONE, memoryRef);
-				assert(bgfx::isValid(textureHandle));
+				
+				ks::ITexture2D* textureHandle = renderEngine.createTexture2D(width,
+					height,
+					ks::TextureFormat::R8G8B8A8_UNORM, 
+					data);
 				textureHandles.push_back(textureHandle);
 			}
+
+			cleanClosure = [textureHandles]()
+			{
+				for (size_t i = 0; i < textureHandles.size(); i++)
+				{
+					Kernel::renderEngine->erase(textureHandles[i]);
+				}
+			};
 		}
 
 		if (rootNode.isRoot)
 		{
-			return render(rootNode.filter, textureHandles, renderRect, ioFramebufferViewId);
+			std::shared_ptr<ks::IFrameBuffer> frameBuffer = render(rootNode.filter, textureHandles, renderRect);
+			if (cleanClosure)
+			{
+				cleanClosure();
+			}
+			return frameBuffer;
 		}
 		else
 		{
 			ks::Rect renderRect = rootNode.filter->getCurrentOutputImage()->getRect();
-			return render(rootNode.filter, textureHandles, renderRect, ioFramebufferViewId);
+			std::shared_ptr<ks::IFrameBuffer> frameBuffer = render(rootNode.filter, textureHandles, renderRect);
+			if (cleanClosure)
+			{
+				cleanClosure();
+			}
+			return frameBuffer;
 		}
 	}
 
 	ks::PixelBuffer* FilterContext::render(const ks::Image & image, const ks::Rect& bound) const noexcept
 	{
+		assert(ks::Kernel::renderEngine);
+		ks::IRenderEngine& renderEngine = *ks::Kernel::renderEngine;
+
 		FilterChainNode rootNode = makeChain(image);
 		rootNode.isRoot = true;
-		bgfx::ViewId ioFramebufferViewId = 1;
-		std::shared_ptr<ks::FrameBuffer> frameBuffer = _walk(rootNode, bound, ioFramebufferViewId);
-		ks::PixelBuffer* bufferPtr = new ks::PixelBuffer(frameBuffer->width, frameBuffer->height, ks::PixelBuffer::FormatType::rgba8);
-		const bgfx::ViewId mainViewId = 0;
-		bgfx::blit(mainViewId, frameBuffer->m_rb, 0, 0, bgfx::getTexture(frameBuffer->m_FrameBufferHandle));
-		const uint32_t associatedFrameNumber = bgfx::readTexture(frameBuffer->m_rb, bufferPtr->getMutableData()[0], 0);
-		frameNumber = bgfx::frame();
-		frameNumber = bgfx::frame();
+		std::shared_ptr<ks::IFrameBuffer> frameBuffer = _walk(rootNode, bound);
+		ks::PixelBuffer* bufferPtr = new ks::PixelBuffer(bound.width,
+			bound.height,
+			ks::PixelBuffer::FormatType::rgba8);
+		renderEngine.readTexture(frameBuffer.get(), *bufferPtr);
 		return bufferPtr;
 	}
-
 }

@@ -16,10 +16,10 @@ namespace ks
 	std::shared_ptr<TransformFilter> TransformFilter::create() noexcept
 	{
 		static std::shared_ptr<Kernel> kernel = Kernel::create(R"(
-kernel vec4 fragmentShader(BgfxSampler2D inputImage)
+kernel float4 fragmentShader(Texture2D inputImage, PS_INPUT ps_input)
 {
-
-	return texture2D(inputImage, ks_destCoord());
+	float4 color = inputImage.Sample(ks_sampler0(), ps_input.texcoord);
+	return color;
 }
 )");
 		std::shared_ptr<TransformFilter> ptr = std::make_shared<TransformFilter>();
@@ -29,9 +29,10 @@ kernel vec4 fragmentShader(BgfxSampler2D inputImage)
 
 	KernelRenderInstruction TransformFilter::onPrepare(const ks::Rect& renderRect)
 	{
-		kernel->setIndices(std::vector<unsigned int>{
-			0, 1, 2, 1, 2, 3
-		});
+		const std::vector<unsigned int > indexBuffer = std::vector<unsigned int >{
+			0, 1, 2, 2, 1, 3
+		};
+
 		ks::RectTransDescription des = ks::RectTransDescription(inputImage->getRect()).applyTransform(transform);
 		des = ks::convertToNDC(des, renderRect);
 		const ks::Quadrilateral quad = des.getQuad();
@@ -41,7 +42,9 @@ kernel vec4 fragmentShader(BgfxSampler2D inputImage)
 			ks::ImageVertex(glm::vec3(quad.bottomLeft, 1.0), glm::vec2(0.0, 1.0)), // Bottom-Left
 			ks::ImageVertex(glm::vec3(quad.bottomRight, 1.0), glm::vec2(1.0, 1.0)), // Bottom-Right
 		};
-		kernel->setVertex(vertexs.data(), vertexs.size() * sizeof(ks::ImageVertex), ImageVertex::vertexLayout);
+
+		kernel->setVertexObject(vertexs.data(), vertexs.size(), sizeof(ks::ImageVertex),
+			indexBuffer.data(), indexBuffer.size(), ks::IIndexBuffer::IndexDataType::uint32);
 
 		assert(getInputImages().size() == 1);
 		KernelRenderInstruction instruction;

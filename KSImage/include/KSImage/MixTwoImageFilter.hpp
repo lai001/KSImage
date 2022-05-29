@@ -1,5 +1,5 @@
-#ifndef REVERSE_COLOR_FILTER_HPP
-#define REVERSE_COLOR_FILTER_HPP
+#ifndef KSImage_MixTwoImageFilter_hpp
+#define KSImage_MixTwoImageFilter_hpp
 
 #include "Filter.hpp"
 #include "defs.hpp"
@@ -19,4 +19,4 @@ namespace ks
 	};
 }
 
-#endif // !REVERSE_COLOR_FILTER_HPP
+#endif // !KSImage_MixTwoImageFilter_hpp

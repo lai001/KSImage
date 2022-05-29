@@ -1,5 +1,5 @@
-#ifndef TransformFilter_hpp
-#define TransformFilter_hpp
+#ifndef KSImage_TransformFilter_hpp
+#define KSImage_TransformFilter_hpp
 
 #include <glm/glm.hpp>
 #include "Filter.hpp"
@@ -19,4 +19,4 @@ namespace ks
 	};
 }
 
-#endif // !TransformFilter_hpp
+#endif // !KSImage_TransformFilter_hpp

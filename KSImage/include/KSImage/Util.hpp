@@ -1,7 +1,6 @@
-#ifndef KSUTIL_HPP
-#define KSUTIL_HPP
+#ifndef KSImage_Util_hpp
+#define KSImage_Util_hpp
 
-#include <bgfx/bgfx.h>
 #include <Foundation/Foundation.hpp>
 #include "Image.hpp"
 #include "Rect.hpp"
@@ -16,11 +15,8 @@ namespace ks
 		std::string fragmentPath;
 	};
 
-	std::string KSImage_API shaderDir() noexcept;
-
-	ShaderPaire KSImage_API getShaderPaire(const std::string& name) noexcept;
-
 	Rect KSImage_API getUnionRect(const std::vector<ks::Image>& images) noexcept;
+
 	Rect KSImage_API getUnionRect(const std::vector<std::shared_ptr<ks::Image>>& images) noexcept;
 
 	Rect KSImage_API makeRectAspectFit(const float aspectWidthRatio, const float aspectHeightRatio, const Rect& boundingRect) noexcept;
@@ -30,4 +26,4 @@ namespace ks
 	ks::RectTransDescription KSImage_API convertToNDC(const ks::RectTransDescription& des, const ks::Rect& boundingBox) noexcept;
 }
 
-#endif // !KSUTIL_HPP
+#endif // !KSImage_Util_hpp

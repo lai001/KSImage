@@ -1,5 +1,5 @@
-#ifndef RECT_HPP
-#define RECT_HPP
+#ifndef KSImage_Rect_hpp
+#define KSImage_Rect_hpp
 
 #include <algorithm>
 #include "defs.hpp"
@@ -25,4 +25,4 @@ namespace ks
 	};
 }
 
-#endif // !RECT_HPP
+#endif // !KSImage_Rect_hpp

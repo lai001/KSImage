@@ -1,5 +1,5 @@
-#ifndef IMAGE_HPP
-#define IMAGE_HPP
+#ifndef KSImage_Image_hpp
+#define KSImage_Image_hpp
 
 #include <Foundation/Foundation.hpp>
 #include "Rect.hpp"
@@ -7,7 +7,7 @@
 
 namespace ks
 {
-	class KSImage_API Image: public boost::noncopyable
+	class KSImage_API Image: public noncopyable
 	{
 		friend class Filter;
 
@@ -47,4 +47,4 @@ namespace ks
 	};
 }
 
-#endif // !IMAGE_HPP
+#endif // !KSImage_Image_hpp

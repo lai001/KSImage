@@ -28,17 +28,19 @@ namespace ks
 
 	KernelRenderInstruction Filter::onPrepare(const ks::Rect& renderRect)
 	{
-		kernel->setIndices(std::vector<unsigned int >{
-			0, 1, 2, 1, 2, 3
-		});
-		
-		std::vector<ks::ImageVertex> vertexs = {
+		const std::vector<unsigned int > indexBuffer = std::vector<unsigned int >{
+			0, 1, 2, 2, 1, 3
+		};
+
+		const std::vector<ks::ImageVertex> vertexs = {
 			ks::ImageVertex(glm::vec3(-1.0,  1.0, 1.0), glm::vec2(0.0, 0.0)),
 			ks::ImageVertex(glm::vec3( 1.0,  1.0, 1.0), glm::vec2(1.0, 0.0)),
 			ks::ImageVertex(glm::vec3(-1.0, -1.0, 1.0), glm::vec2(0.0, 1.0)),
 			ks::ImageVertex(glm::vec3( 1.0, -1.0, 1.0), glm::vec2(1.0, 1.0)),
 		};
-		kernel->setVertex(vertexs.data(), vertexs.size() * sizeof(ks::ImageVertex), ImageVertex::vertexLayout);
+
+		kernel->setVertexObject(vertexs.data(), vertexs.size(), sizeof(ks::ImageVertex),
+			indexBuffer.data(), indexBuffer.size(), ks::IIndexBuffer::IndexDataType::uint32);
 
 		KernelRenderInstruction instruction;
 		const std::vector<std::shared_ptr<ks::Image>>& inputImages = getInputImages();

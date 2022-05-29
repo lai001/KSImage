@@ -32,6 +32,7 @@ public:
 	bool shouldClose();
 	void present(const int vsync = 1) const noexcept;
 	void setRenderTarget() const noexcept;
+	void clearColor();
 
 public:
 	Configuration cfg;

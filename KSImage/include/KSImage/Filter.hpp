@@ -1,9 +1,11 @@
-#ifndef FILTER_HPP
-#define FILTER_HPP
+#ifndef KSImage_Filter_hpp
+#define KSImage_Filter_hpp
 
 #include <Foundation/Foundation.hpp>
+#include <KSRenderEngine/KSRenderEngine.hpp>
 #include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
+#include "KernelUniform.hpp"
 #include "Image.hpp"
 #include "Kernel.hpp"
 #include "Util.hpp"
@@ -36,4 +38,4 @@ namespace ks
 	};
 }
 
-#endif // !FILTER_HPP
+#endif // !KSImage_Filter_hpp

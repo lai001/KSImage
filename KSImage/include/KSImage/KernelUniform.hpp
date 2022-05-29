@@ -1,8 +1,8 @@
-#ifndef KERNELUNIFORM_HPP
-#define KERNELUNIFORM_HPP
+#ifndef KSImage_KernelUniform_hpp
+#define KSImage_KernelUniform_hpp
 
 #include <Foundation/Foundation.hpp>
-#include <bgfx/bgfx.h>
+#include <KSRenderEngine/KSRenderEngine.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Image.hpp"
@@ -126,13 +126,13 @@ namespace ks
 				}
 			}
 
-			Value(float v)							:type(ValueType::f32),			f32(v) { }
-			Value(glm::vec2 v)						:type(ValueType::vec2),			vec2(v) { }
-			Value(glm::vec3 v)						:type(ValueType::vec3),			vec3(v) { }
-			Value(glm::vec4 v)						:type(ValueType::vec4),			vec4(v) { }
-			Value(glm::mat3 v)						:type(ValueType::mat3),			mat3(v) { }
-			Value(glm::mat4 v)						:type(ValueType::mat4),			mat4(v) { }
-			Value(std::shared_ptr<ks::Image> v)		:type(ValueType::texture2d),	texture2d(v) { }
+			Value(float v)						:type(ValueType::f32),			f32(v) { }
+			Value(glm::vec2 v)					:type(ValueType::vec2),			vec2(v) { }
+			Value(glm::vec3 v)					:type(ValueType::vec3),			vec3(v) { }
+			Value(glm::vec4 v)					:type(ValueType::vec4),			vec4(v) { }
+			Value(glm::mat3 v)					:type(ValueType::mat3),			mat3(v) { }
+			Value(glm::mat4 v)					:type(ValueType::mat4),			mat4(v) { }
+			Value(std::shared_ptr<ks::Image> v) :type(ValueType::texture2d),	texture2d(v) { }
 		
 			const void* getData() const noexcept
 			{
@@ -150,7 +150,6 @@ namespace ks
 	private:
 		std::string name;
 		ValueType type;
-		bgfx::UniformHandle u_handle = BGFX_INVALID_HANDLE;
 
 	public:
 		KernelUniform(const std::string& name, const ValueType& type);
@@ -159,8 +158,7 @@ namespace ks
 		void setValue(const Value& value) noexcept;
 		std::string getName() const noexcept;
 		ks::KernelUniform::ValueType getType() const noexcept;
-		bgfx::UniformHandle getHandle() const noexcept;
 	};
 }
 
-#endif // !KERNELUNIFORM_HPP
+#endif // !KSImage_KernelUniform_hpp

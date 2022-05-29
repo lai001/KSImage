@@ -1,8 +1,6 @@
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_win32.h>
 #include <imgui/backends/imgui_impl_dx11.h>
-#include <bgfx/bgfx.h>
-#include <bgfx/platform.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/format.h>
 #include <glm/glm.hpp>
@@ -10,8 +8,8 @@
 #include <Foundation/Foundation.hpp>
 #include <KSImage/KSImage.hpp>
 #include "Platform/WindowsPlatform.hpp"
-#include "ImGuibgfxRender/OcornutImguiContext.hpp"
 #include "ImageDecoder.hpp"
+#include "ImageIO.hpp"
 
 std::unique_ptr<ImageDecoder> imageDecoder = std::make_unique<ImageDecoder>();
 
@@ -27,14 +25,13 @@ struct DataSource
 	float intensity = 0.5;
 	Transform transform0;
 	Transform transform1;
-	bool isSaveImage = false;
 	bool isEnableDraw = true;
-
+	std::function<bool()> isSaveImage;
 	DataSource()
 	{
 	}
 
-} dataSouce;
+} dataSource;
 
 static std::unique_ptr<WindowsPlatform> windowsPlatformPtr;
 
@@ -55,42 +52,58 @@ void ImGuiInit()
 		currentWindowWidth = width;
 		currentWindowHeight = height;
 	};
-
-	imguiCreate();
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGui::StyleColorsDark();
 	ImGui_ImplWin32_Init(windowsPlatformPtr->hwnd);
+	ImGui_ImplDX11_Init(windowsPlatformPtr->pd3dDevice, windowsPlatformPtr->pd3dDeviceContext);
 }
 
 void ImGuiDraw()
 {
-	imguiBeginFrame(currentWindowWidth, currentWindowHeight);
-	defer{ imguiEndFrame(); };
+	windowsPlatformPtr->clearColor();
+
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
 
 	ImGui::Begin("Debug");
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::NewLine();
-	ImGui::SliderFloat("Intensity", &dataSouce.intensity, 0.0, 1.0);
+	ImGui::SliderFloat("Intensity", &dataSource.intensity, 0.0, 1.0);
 	ImGui::NewLine();
-	ImGui::DragFloat("Angle", &dataSouce.transform0.angle);
-	ImGui::DragFloat("Scale", &dataSouce.transform0.scale, 0.01, 0.1, 3.0);
-	ImGui::DragFloat2("Offset", glm::value_ptr(dataSouce.transform0.offset));
+	ImGui::DragFloat("Angle", &dataSource.transform0.angle);
+	ImGui::DragFloat("Scale", &dataSource.transform0.scale, 0.01, 0.1, 3.0);
+	ImGui::DragFloat2("Offset", glm::value_ptr(dataSource.transform0.offset));
 	ImGui::NewLine();
-	ImGui::DragFloat("Angle1", &dataSouce.transform1.angle);
-	ImGui::DragFloat("Scale1", &dataSouce.transform1.scale, 0.01, 0.1, 3.0);
-	ImGui::DragFloat2("Offset1", glm::value_ptr(dataSouce.transform1.offset));
+	ImGui::DragFloat("Angle1", &dataSource.transform1.angle);
+	ImGui::DragFloat("Scale1", &dataSource.transform1.scale, 0.01, 0.1, 3.0);
+	ImGui::DragFloat2("Offset1", glm::value_ptr(dataSource.transform1.offset));
 
-	if (ImGui::Button("Save"))
+	if (ImGui::Button("Save image"))
 	{
-		dataSouce.isSaveImage = true;
+		dataSource.isSaveImage = []()
+		{
+			dataSource.isSaveImage = std::function<bool()>();
+			return true;
+		};
 	}
-	ImGui::Checkbox("IsEnableDraw", &dataSouce.isEnableDraw);
+	ImGui::Checkbox("IsEnableDraw", &dataSource.isEnableDraw);
 	ImGui::End();
+
+	ImGui::Render();
+	windowsPlatformPtr->setRenderTarget();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	windowsPlatformPtr->present();
 }
 
 void ImGuiDestroy()
 {
+	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
-	imguiDestroy();
+	ImGui::DestroyContext();
 }
 
 void frameTick()
@@ -101,66 +114,39 @@ void frameTick()
 	static std::shared_ptr<ks::TransformFilter> transformFilter0 = ks::TransformFilter::create();
 	transformFilter0->inputImage = inputImage;
 	transformFilter0->transform = ks::RectTransDescription(inputImage->getRect())
-		.scaleAroundCenter(glm::vec2(dataSouce.transform0.scale))
-		.rotateAroundCenter(glm::radians<float>(dataSouce.transform0.angle))
-		.translate(dataSouce.transform0.offset)
+		.scaleAroundCenter(glm::vec2(dataSource.transform0.scale))
+		.rotateAroundCenter(glm::radians<float>(dataSource.transform0.angle))
+		.translate(dataSource.transform0.offset)
 		.getTransform();
 
 	static std::shared_ptr<ks::TransformFilter> transformFilter1 = ks::TransformFilter::create();
 	transformFilter1->inputImage = inputTargetImage;
 	transformFilter1->transform = ks::RectTransDescription(inputTargetImage->getRect())
-		.scaleAroundCenter(glm::vec2(dataSouce.transform1.scale))
-		.rotateAroundCenter(glm::radians<float>(dataSouce.transform1.angle))
-		.translate(dataSouce.transform1.offset)
+		.scaleAroundCenter(glm::vec2(dataSource.transform1.scale))
+		.rotateAroundCenter(glm::radians<float>(dataSource.transform1.angle))
+		.translate(dataSource.transform1.offset)
 		.getTransform();
 
 	static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter0 = ks::MixTwoImageFilter::create();
 	mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
 	mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
-	mixTwoImageFilter0->u_intensity = dataSouce.intensity;
+	mixTwoImageFilter0->u_intensity = dataSource.intensity;
 
 	static std::unique_ptr<ks::FilterContext> context = std::unique_ptr<ks::FilterContext>(ks::FilterContext::create());
 
-	std::unique_ptr<ks::PixelBuffer> bufferPtr = std::unique_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage().get(), ks::Rect(0.0, 0.0, 1280.0, 720.0)));
+	std::unique_ptr<ks::PixelBuffer> bufferPtr = 
+		std::unique_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage().get(), ks::Rect(0.0, 0.0, 1280, 720)));
 
-	if (dataSouce.isSaveImage)
+	if (dataSource.isSaveImage && dataSource.isSaveImage())
 	{
-		unsigned char* data = reinterpret_cast<unsigned char*>(bufferPtr->getMutableData()[0]);
 		std::string targetPath = fmt::format("{}/{}.png", ks::Application::getAppDir(), "KSImage");
-		int writeStatus = stbi_write_png(targetPath.c_str(), bufferPtr->getWidth(), bufferPtr->getHeight(), bufferPtr->getChannels(), data, bufferPtr->getWidth() * bufferPtr->getChannels());
-		spdlog::debug("{}, {}", bool(writeStatus), targetPath);
-		dataSouce.isSaveImage = false;
+		bool writeStatus = ImageIO::saveImage(*bufferPtr.get(), targetPath);
+		spdlog::debug("{}, {}", writeStatus, targetPath);
 	}
 
-	bool isDraw = dataSouce.isEnableDraw;
-	bgfx::ViewId mainViewId = 0;
-	bgfx::touch(mainViewId);
-	bgfx::setViewRect(mainViewId, 0, 0, currentWindowWidth, currentWindowHeight);
-	bgfx::setViewClear(mainViewId, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x000000ff, 1.0f, 0);
-	bgfx::setViewFrameBuffer(mainViewId, BGFX_INVALID_HANDLE);
-	if (isDraw)
+	if (dataSource.isEnableDraw)
 	{
-		static std::shared_ptr<ks::Kernel> kernel = ks::Kernel::create("image", { ks::KernelUniform::Info("s_texColor", ks::KernelUniform::ValueType::texture2d) });
-		const std::vector<unsigned int> indices = {
-			0, 1, 2,
-			1, 2, 3
-		};
-		const ks::Rect fitRect = ks::makeRectAspectFit(bufferPtr->getWidth(), bufferPtr->getHeight(), ks::Rect(0.0, 0.0, currentWindowWidth, currentWindowHeight));
-		ks::RectTransDescription des(fitRect);
-		des = ks::convertToNDC(des, ks::Rect(0.0, 0.0, currentWindowWidth, currentWindowHeight));
 
-		kernel->bindIndices(indices);
-		const std::vector<ks::ImageVertex> vertexs = {
-			ks::ImageVertex(glm::vec3(des.getQuad().topLeft, 1.0), glm::vec2(0.0, 0.0)), // Top-Left
-			ks::ImageVertex(glm::vec3(des.getQuad().topRight, 1.0),  glm::vec2(1.0, 0.0)), // Top-Right
-			ks::ImageVertex(glm::vec3(des.getQuad().bottomLeft, 1.0), glm::vec2(0.0, 1.0)), // Bottom-Left
-			ks::ImageVertex(glm::vec3(des.getQuad().bottomRight, 1.0),  glm::vec2(1.0, 1.0)), // Bottom-Right
-		};
-		kernel->bindVertex(vertexs.data(), vertexs.size() * sizeof(ks::ImageVertex), ks::ImageVertex::vertexLayout, 0);
-		kernel->bindTexture2D("s_texColor", *bufferPtr.get());
-
-		bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A);
-		bgfx::submit(mainViewId, kernel->getBgfxProgram());
 	}
 }
 
@@ -178,12 +164,15 @@ int main(int argc, char** argv)
 	windowsPlatformPtr = std::make_unique<WindowsPlatform>();
 	windowsPlatformPtr->Init(cfg);
 
-	ks::FilterContext::Init(windowsPlatformPtr->hwnd, currentWindowWidth, currentWindowHeight);
+	ks::D3D11RenderEngineCreateInfo info;
+	info.device = windowsPlatformPtr->pd3dDevice;
+	info.context = windowsPlatformPtr->pd3dDeviceContext;
+	ks::FilterContext::Init(info);
+
 	ImGuiInit();
 	defer
 	{
 		ImGuiDestroy();
-		ks::FilterContext::shutdown();
 	};
 
 	while (windowsPlatformPtr->shouldClose() == false)

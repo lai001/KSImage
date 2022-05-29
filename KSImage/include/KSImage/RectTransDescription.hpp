@@ -1,5 +1,5 @@
-#ifndef RECTTRANSDESCRIPTION_HPP
-#define RECTTRANSDESCRIPTION_HPP
+#ifndef KSImage_RectTransDescription_hpp
+#define KSImage_RectTransDescription_hpp
 
 #include <glm/glm.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
@@ -66,4 +66,4 @@ namespace ks
 	};
 }
 
-#endif // !RECTTRANSDESCRIPTION_HPP
+#endif // !KSImage_RectTransDescription_hpp

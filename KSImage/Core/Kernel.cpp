@@ -1,234 +1,163 @@
 #include "Kernel.hpp"
-#include <fstream>
-#include <string>
-#include <sstream>
 #include "Util.hpp"
-#include "FragmentAnalysis.hpp"
-#include "ShaderCompiler.hpp"
 
 namespace ks
 {
+	IRenderEngine* Kernel::renderEngine = nullptr;
+
 	const std::string DefaultVertexShaderCode = R"(
-
-$input a_position, a_texcoord0
-$output v_texcoord0
-
-void main()
+struct VS_INPUT
 {
-	gl_Position = vec4(a_position, 1.0);
-	v_texcoord0 = a_texcoord0;
-}
+	float3 position: POSITION;
+	float2 texcoord: TEXCOORD;
+};
 
+struct PS_INPUT
+{
+	float4 position: SV_POSITION;
+	float2 texcoord: TEXCOORD;
+};
+
+PS_INPUT main(VS_INPUT input)
+{
+	PS_INPUT vs_output;
+	vs_output.position = float4(input.position, 1.0);
+	vs_output.texcoord = input.texcoord;
+	return vs_output;
+}
 )";
 
 	Kernel::~Kernel()
 	{
-		if (bgfx::isValid(m_vbh))
+		assert(shader);
+		assert(renderEngine);
+		renderEngine->erase(shader);
+
+		if (renderBuffer)
 		{
-			bgfx::destroy(m_vbh);
-		}
-		if (bgfx::isValid(m_ibh))
-		{
-			bgfx::destroy(m_ibh);
-		}
-		assert(program);
-		delete program;
-		for (ks::KernelUniform * item : uniforms)
-		{
-			assert(item);
-			delete item;
-		}
-		for (const auto& args : kernel_texture2ds)
-		{
-			assert(args.second);
-			delete args.second;
+			renderEngine->erase(renderBuffer);
 		}
 	}
 
-	std::shared_ptr<Kernel> Kernel::create(
-		const std::string& vertexShaderCodePath,
-		const std::string& fragmentShaderCodePath,
-		const std::vector<KernelUniform::Info>& kernel_uniform_infos) noexcept
+	std::shared_ptr<Kernel> Kernel::create(const std::string& kernelFragmentShader) noexcept
 	{
-		const bgfx::Memory * codeMemory = ks::ShaderCompiler::readShaderCodeFromFile(fragmentShaderCodePath);
-		const bgfx::Memory * vertextCodeMemory = ks::ShaderCompiler::readShaderCodeFromFile(vertexShaderCodePath);
-		assert(codeMemory);
-		assert(vertextCodeMemory);
-		std::shared_ptr<Kernel> kernel = std::make_shared<Kernel>();
-		kernel->program = ShaderProgram::create(vertextCodeMemory, codeMemory);
-		for (auto Info : kernel_uniform_infos)
-		{
-			kernel->uniforms.push_back(new ks::KernelUniform(Info));
-			if (Info.type == ks::KernelUniform::ValueType::texture2d)
-			{
-				kernel->kernel_texture2ds.emplace(Info.name, ks::KernelTexture2D::createPlaceHolder());
-				kernel->maxStage += 1;
-			}
-		}
+		FragmentAnalysis::AnalysisResult analysisResult = FragmentAnalysis().analysis(kernelFragmentShader);
+
+		std::shared_ptr<ks::Kernel> kernel = std::make_shared<Kernel>();
+		kernel->shader = Kernel::renderEngine->createShader(DefaultVertexShaderCode, analysisResult.fragmentShaderCode);
+		kernel->analysisResult = analysisResult;
+		assert(kernel->shader);
 		return kernel;
 	}
 
-	std::shared_ptr<Kernel> Kernel::create(
-		const std::string& shaderName,
-		const std::vector<KernelUniform::Info>& kernel_uniform_infos) noexcept
+	void Kernel::setVertexObject(const void * vertexBuffer,
+		const unsigned int vertexCount,
+		const unsigned int stride,
+		const void * indexBuffer, 
+		const unsigned int indexCount, 
+		ks::IIndexBuffer::IndexDataType indexDataType) noexcept
 	{
-		ks::ShaderPaire paire = ks::getShaderPaire(shaderName);
-		return Kernel::create(paire.vertexPath, paire.fragmentPath, kernel_uniform_infos);
-	}
-
-	std::shared_ptr<Kernel> Kernel::create(const std::string & fragmentShaderCode) noexcept
-	{
-		ks::FragmentAnalysis analysis;
-		ks::FragmentAnalysis::AnalysisResult result = analysis.analysis(fragmentShaderCode);
-		ks::ShaderCompiler compiler;
-		ks::ShaderPaire paire = compiler.compileFile("tmp", DefaultVertexShaderCode, result.fragmentShaderCode);
-		return Kernel::create(paire.vertexPath, paire.fragmentPath, result.uniformInfos);
-	}
-
-	bgfx::VertexBufferHandle Kernel::setVertex(const void * vertextBuffer, const unsigned int vertextBufferSize, const bgfx::VertexLayout & layout) noexcept
-	{
-		if (bgfx::isValid(m_vbh))
+		assert(renderEngine);
+		assert(shader);
+		if (renderBuffer)
 		{
-			bgfx::destroy(m_vbh);
+			renderEngine->erase(renderBuffer);
 		}
-		vertexBuffer = bgfx::copy(vertextBuffer, vertextBufferSize);
-		vertexBufferLayout = layout;
-		m_vbh = bgfx::createVertexBuffer(vertexBuffer, layout, BGFX_BUFFER_NONE);
-		assert(bgfx::isValid(m_vbh));
-		return m_vbh;
+		renderBuffer = renderEngine->createRenderBuffer(vertexBuffer,
+			vertexCount,
+			stride,
+			*shader,
+			indexBuffer,
+			indexCount,
+			indexDataType);
 	}
 
-	bgfx::IndexBufferHandle Kernel::setIndices(const std::vector<unsigned int>& indices) noexcept
+	void Kernel::setUniform(const std::vector<ks::KernelUniform::Value>& uniformValues,
+		std::function<ITexture2D*(unsigned int, glm::vec4*)> unretainTexture2D) noexcept
 	{
-		if (bgfx::isValid(m_ibh))
+		assert(analysisResult.uniformInfos.size() == uniformValues.size());
+		assert(renderEngine);
+		unsigned int textureIndex = 0;
+		for (size_t i = 0; i < uniformValues.size(); i++)
 		{
-			bgfx::destroy(m_ibh);
-		}
-		_indices = indices;
-		m_ibh = bgfx::createIndexBuffer(bgfx::copy(_indices.data(), sizeof(unsigned int) * indices.size()), BGFX_BUFFER_INDEX32);
-		assert(bgfx::isValid(m_ibh));
-		return m_ibh;
-	}
-
-	void Kernel::bindVertex(const void * vertextBuffer, const unsigned int vertextBufferSize, const bgfx::VertexLayout & layout, const unsigned char stream) noexcept
-	{
-		bgfx::VertexBufferHandle handle = setVertex(vertextBuffer, vertextBufferSize, layout);
-		bgfx::setVertexBuffer(stream, handle);
-	}
-
-	void Kernel::bindIndices(const std::vector<unsigned int>& indices) noexcept
-	{
-		bgfx::IndexBufferHandle handle = setIndices(indices);
-		bgfx::setIndexBuffer(handle);
-	}
-
-	void Kernel::bindTexture2D(const std::string & name, const std::shared_ptr<ks::Image> image) noexcept
-	{
-		bool isFindTexture2D = false;
-
-		for (auto& uniform : uniforms)
-		{
-			if (uniform->getName() == name)
+			const ks::KernelUniform::Value value = uniformValues[i];
+			assert(analysisResult.uniformInfos[i].type == value.type);
+			if (value.type == ks::KernelUniform::ValueType::texture2d)
 			{
-				kernel_texture2ds[name]->copyImage(image);
-				kernel_texture2ds[name]->bind(_stage, uniform->getHandle());
-				_stage += 1;
-				_stage %= maxStage;
-				isFindTexture2D = true;
+				const std::string texture2DName = FragmentAnalysis::ShareInfo::texture2DName(textureIndex);
+				glm::vec4 samplerSapce;
+				ks::ITexture2D *texture2d = unretainTexture2D(textureIndex, &samplerSapce);
+				assert(texture2d);
+				setTexture2D(texture2DName, *texture2d);
+				const std::string uniformSamplerSpaceName = FragmentAnalysis::ShareInfo::uniformSamplerSpaceName(textureIndex);
+				setUniform(uniformSamplerSpaceName, ks::UniformValue(samplerSapce));
+				textureIndex += 1;
+			}
+			else
+			{
+				const std::string name = analysisResult.uniformInfos[i].name;
+				const  ks::KernelUniform::ValueType type = analysisResult.uniformInfos[i].type;
+				switch (type)
+				{
+				case ks::KernelUniform::ValueType::f32:
+					setUniform(name, ks::UniformValue(value.f32));
+					break;
+				case ks::KernelUniform::ValueType::vec2:
+					setUniform(name, ks::UniformValue(value.vec2));
+					break;
+				case ks::KernelUniform::ValueType::vec3:
+					setUniform(name, ks::UniformValue(value.vec3));
+					break;
+				case ks::KernelUniform::ValueType::vec4:
+					setUniform(name, ks::UniformValue(value.vec4));
+					break;
+				case ks::KernelUniform::ValueType::mat3:
+					setUniform(name, ks::UniformValue(value.mat3));
+					break;
+				case ks::KernelUniform::ValueType::mat4:
+					setUniform(name, ks::UniformValue(value.mat4));
+					break;
+				default:
+					assert(false);
+					break;
+				}
 			}
 		}
-		assert(isFindTexture2D && "Don't find Texture2D");
 	}
 
-	void Kernel::bindTexture2D(const std::string & name, const ks::PixelBuffer& pixelBuffer) noexcept
+	void Kernel::setUniform(const std::string & name, const ks::UniformValue & value) noexcept
 	{
-		bool isFindTexture2D = false;
-
-		for (auto& uniform : uniforms)
-		{
-			if (uniform->getName() == name)
-			{
-				kernel_texture2ds[name]->copyPixelBuffer(pixelBuffer);
-				kernel_texture2ds[name]->bind(_stage, uniform->getHandle());
-				_stage += 1;
-				_stage %= maxStage;
-				isFindTexture2D = true;
-			}
-		}
-		assert(isFindTexture2D && "Don't find Texture2D");
+		assert(shader);
+		const std::string actualName = fmt::format("{}.{}", ks::FragmentAnalysis::ShareInfo::cBufferBlockName(), name);
+		shader->setUniform(actualName, value);
 	}
 
-	void Kernel::bindTexture2D(const std::string & name, const bgfx::TextureHandle textureHandle) noexcept
+	void Kernel::setTexture2D(const std::string & name, const ks::ITexture2D & texture2D) noexcept
 	{
-		bool isFindTexture2D = false;
-
-		for (auto& uniform : uniforms)
-		{
-			if (uniform->getName() == name)
-			{
-				kernel_texture2ds[name]->copyTextureHandle(textureHandle);
-				kernel_texture2ds[name]->bind(_stage, uniform->getHandle());
-				_stage += 1;
-				_stage %= maxStage;
-				isFindTexture2D = true;
-			}
-		}
-		assert(isFindTexture2D && "Don't find Texture2D");
+		assert(shader);
+		shader->setTexture2D(name, texture2D);
 	}
 
-	void Kernel::bindUniform(const std::string & name, const ks::KernelUniform::Value & value) noexcept
+	void Kernel::commit(std::shared_ptr<ks::IFrameBuffer> frameBuffer)
 	{
-		bool isFindUniform = false;
-		for (auto& uniform : uniforms)
-		{
-			if (uniform->getName() == name)
-			{
-				assert(uniform->getType() != ks::KernelUniform::ValueType::texture2d);
-				uniform->setValue(value);
-				isFindUniform = true;
-			}
-		}
-		assert(isFindUniform && "Don't find unifom");
-	}
+		assert(renderEngine);
 
-	const ShaderProgram* Kernel::getProgram() const noexcept
-	{
-		return program;
-	}
+		ks::IBlendState* blendState = renderEngine->createBlendState(ks::BlendStateDescription::Addition::getDefault(), ks::BlendStateDescription::getDefault());
+		ks::IDepthStencilState* depthStencilState = renderEngine->createDepthStencilState(ks::DepthStencilStateDescription::getDefault());
+		ks::IRasterizerState* rasterizerState = renderEngine->createRasterizerState(ks::RasterizerStateDescription::getDefault());
 
-	bgfx::ProgramHandle Kernel::getBgfxProgram() const noexcept
-	{
-		return program->getProgramHandle();
-	}
+		IRenderBuffer & renderBuffer = *this->renderBuffer;
+		renderBuffer.setClearColor(glm::vec4(0.0, 0.0, 0.0, 0.0));
+		renderBuffer.setViewport(0, 0, frameBuffer->getWidth(), frameBuffer->getHeight());
+		renderBuffer.setClearBufferFlags(ks::ClearBufferFlags::color);
+		renderBuffer.setBlendState(*blendState);
+		renderBuffer.setDepthStencilState(*depthStencilState);
+		renderBuffer.setRasterizerState(*rasterizerState);
+		renderBuffer.setPrimitiveTopologyType(ks::PrimitiveTopologyType::trianglelist);
+		renderBuffer.commit(*frameBuffer.get());
 
-	bgfx::VertexBufferHandle Kernel::getVertexBufferHandle() const noexcept
-	{
-		return m_vbh;
-	}
-
-	bgfx::IndexBufferHandle Kernel::getIndexBufferHandle() const noexcept
-	{
-		return m_ibh;
-	}
-
-	std::vector<const KernelUniform*> Kernel::getUniforms() noexcept
-	{
-		std::vector<const KernelUniform*> _uniforms;
-		for (ks::KernelUniform* uniform : uniforms)
-		{
-			assert(uniform);
-			_uniforms.push_back(uniform);
-		}
-		return _uniforms;
-	}
-
-	std::unordered_map<std::string, const KernelTexture2D*> Kernel::getKernel_texture2Ds() noexcept
-	{
-		std::unordered_map<std::string, const KernelTexture2D*> dic;
-		for (const auto& args : kernel_texture2ds)
-		{
-			dic[args.first] = args.second;
-		}
-		return dic;
+		renderEngine->erase(blendState);
+		renderEngine->erase(depthStencilState);
+		renderEngine->erase(rasterizerState);
 	}
 }
