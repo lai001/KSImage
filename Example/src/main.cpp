@@ -62,7 +62,6 @@ void ImGuiInit()
 
 void ImGuiDraw()
 {
-	windowsPlatformPtr->clearColor();
 
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -96,7 +95,6 @@ void ImGuiDraw()
 	ImGui::Render();
 	windowsPlatformPtr->setRenderTarget();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-	windowsPlatformPtr->present();
 }
 
 void ImGuiDestroy()
@@ -106,12 +104,81 @@ void ImGuiDestroy()
 	ImGui::DestroyContext();
 }
 
+void drawResult(const std::shared_ptr<ks::PixelBuffer> pixelBuffer)
+{
+	windowsPlatformPtr->setRenderTarget();
+
+	static const std::string vert = ks::File::read(ks::Application::getResourcePath("Shader/vert.hlsl"), nullptr);
+	static const std::string frag = ks::File::read(ks::Application::getResourcePath("Shader/frag.hlsl"), nullptr);
+
+	ks::D3D11RenderEngineCreateInfo createInfo;
+	createInfo.device = windowsPlatformPtr->pd3dDevice;
+	createInfo.context = windowsPlatformPtr->pd3dDeviceContext;
+	static ks::IRenderEngine& engine = *ks::RenderEngine::create(createInfo);
+
+	struct Vertex
+	{
+		glm::vec2 aPosition;
+		glm::vec2 texCoord;
+	};
+
+	std::vector<unsigned int> indexBufferData = { 0, 1, 2, 2, 1, 3 };
+
+	std::vector<Vertex> vertexBuffer;
+	{
+		Vertex topLeft;
+		Vertex topRight;
+		Vertex bottomLeft;
+		Vertex bottomRight;
+
+		topLeft.aPosition = glm::vec2(-1.0, 1.0);
+		topLeft.texCoord = glm::vec2(0.0, 0.0);
+		topRight.aPosition = glm::vec2(1.0, 1.0);
+		topRight.texCoord = glm::vec2(1.0, 0.0);
+		bottomLeft.aPosition = glm::vec2(-1.0, -1.0);
+		bottomLeft.texCoord = glm::vec2(0.0, 1.0);
+		bottomRight.aPosition = glm::vec2(1.0, -1.0);
+		bottomRight.texCoord = glm::vec2(1.0, 1.0);
+
+		vertexBuffer.push_back(topLeft);
+		vertexBuffer.push_back(topRight);
+		vertexBuffer.push_back(bottomLeft);
+		vertexBuffer.push_back(bottomRight);
+	}
+	
+	ks::ITexture2D* colorMap = engine.createTexture2D(pixelBuffer->getWidth(),
+		pixelBuffer->getHeight(),
+		ks::TextureFormat::R8G8B8A8_UNORM,
+		pixelBuffer->getImmutableData()[0]);
+	static ks::IShader* shader = engine.createShader(vert, frag);
+	shader->setTexture2D("colorMap", *colorMap);
+	ks::IRenderBuffer * renderBuffer = engine.createRenderBuffer(vertexBuffer.data(), vertexBuffer.size(), sizeof(Vertex),
+		*shader,
+		indexBufferData.data(), indexBufferData.size(), ks::IIndexBuffer::IndexDataType::uint32);
+	ks::IBlendState* blendState = engine.createBlendState(ks::BlendStateDescription::Addition::getDefault(), ks::BlendStateDescription::getDefault());
+	ks::IDepthStencilState* depthStencilState = engine.createDepthStencilState(ks::DepthStencilStateDescription::getDefault());
+	ks::IRasterizerState* rasterizerState = engine.createRasterizerState(ks::RasterizerStateDescription::getDefault());
+	renderBuffer->setViewport(0, 0, currentWindowWidth, currentWindowHeight);
+	renderBuffer->setBlendState(*blendState);
+	renderBuffer->setDepthStencilState(*depthStencilState);
+	renderBuffer->setRasterizerState(*rasterizerState);
+	renderBuffer->setPrimitiveTopologyType(ks::PrimitiveTopologyType::trianglelist);
+	renderBuffer->commit(nullptr);
+
+	engine.erase(renderBuffer);
+	engine.erase(blendState);
+	engine.erase(depthStencilState);
+	engine.erase(rasterizerState);
+	engine.erase(colorMap);
+}
+
 void frameTick()
 {
 	static std::shared_ptr<ks::Image> inputImage = ks::Image::create(ks::Application::getResourcePath("cat.jpg"));
 	static std::shared_ptr<ks::Image> inputTargetImage = ks::Image::create(ks::Application::getResourcePath("environmental.jpg"));
 
 	static std::shared_ptr<ks::TransformFilter> transformFilter0 = ks::TransformFilter::create();
+	transformFilter0->name = "transformFilter0";
 	transformFilter0->inputImage = inputImage;
 	transformFilter0->transform = ks::RectTransDescription(inputImage->getRect())
 		.scaleAroundCenter(glm::vec2(dataSource.transform0.scale))
@@ -120,6 +187,7 @@ void frameTick()
 		.getTransform();
 
 	static std::shared_ptr<ks::TransformFilter> transformFilter1 = ks::TransformFilter::create();
+	transformFilter1->name = "transformFilter1";
 	transformFilter1->inputImage = inputTargetImage;
 	transformFilter1->transform = ks::RectTransDescription(inputTargetImage->getRect())
 		.scaleAroundCenter(glm::vec2(dataSource.transform1.scale))
@@ -128,14 +196,15 @@ void frameTick()
 		.getTransform();
 
 	static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter0 = ks::MixTwoImageFilter::create();
+	mixTwoImageFilter0->name = "mixTwoImageFilter0";
 	mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
 	mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
 	mixTwoImageFilter0->u_intensity = dataSource.intensity;
 
 	static std::unique_ptr<ks::FilterContext> context = std::unique_ptr<ks::FilterContext>(ks::FilterContext::create());
 
-	std::unique_ptr<ks::PixelBuffer> bufferPtr = 
-		std::unique_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage().get(), ks::Rect(0.0, 0.0, 1280, 720)));
+	std::shared_ptr<ks::PixelBuffer> bufferPtr = 
+		std::shared_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage().get(), ks::Rect(0.0, 0.0, 1280, 720)));
 
 	if (dataSource.isSaveImage && dataSource.isSaveImage())
 	{
@@ -146,7 +215,7 @@ void frameTick()
 
 	if (dataSource.isEnableDraw)
 	{
-
+		drawResult(bufferPtr);
 	}
 }
 
@@ -177,8 +246,10 @@ int main(int argc, char** argv)
 
 	while (windowsPlatformPtr->shouldClose() == false)
 	{
-		ImGuiDraw();
+		windowsPlatformPtr->clearColor();
 		frameTick();
+		ImGuiDraw();
+		windowsPlatformPtr->present();
 	}
 
 	return 0;

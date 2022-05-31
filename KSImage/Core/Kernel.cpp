@@ -73,7 +73,8 @@ PS_INPUT main(VS_INPUT input)
 	}
 
 	void Kernel::setUniform(const std::vector<ks::KernelUniform::Value>& uniformValues,
-		std::function<ITexture2D*(unsigned int, glm::vec4*)> unretainTexture2D) noexcept
+		std::vector<ks::ITexture2D*> textureHandles,
+		const KernelRenderInstruction& renderInstruction) noexcept
 	{
 		assert(analysisResult.uniformInfos.size() == uniformValues.size());
 		assert(renderEngine);
@@ -85,8 +86,8 @@ PS_INPUT main(VS_INPUT input)
 			if (value.type == ks::KernelUniform::ValueType::texture2d)
 			{
 				const std::string texture2DName = FragmentAnalysis::ShareInfo::texture2DName(textureIndex);
-				glm::vec4 samplerSapce;
-				ks::ITexture2D *texture2d = unretainTexture2D(textureIndex, &samplerSapce);
+				const glm::vec4 samplerSapce = renderInstruction.sampleSapceRectsNorm[textureIndex];
+				const ks::ITexture2D *texture2d = textureHandles[textureIndex];
 				assert(texture2d);
 				setTexture2D(texture2DName, *texture2d);
 				const std::string uniformSamplerSpaceName = FragmentAnalysis::ShareInfo::uniformSamplerSpaceName(textureIndex);
@@ -138,26 +139,22 @@ PS_INPUT main(VS_INPUT input)
 		shader->setTexture2D(name, texture2D);
 	}
 
-	void Kernel::commit(std::shared_ptr<ks::IFrameBuffer> frameBuffer)
+	void Kernel::commit(ks::IFrameBuffer& frameBuffer)
 	{
 		assert(renderEngine);
 
-		ks::IBlendState* blendState = renderEngine->createBlendState(ks::BlendStateDescription::Addition::getDefault(), ks::BlendStateDescription::getDefault());
-		ks::IDepthStencilState* depthStencilState = renderEngine->createDepthStencilState(ks::DepthStencilStateDescription::getDefault());
-		ks::IRasterizerState* rasterizerState = renderEngine->createRasterizerState(ks::RasterizerStateDescription::getDefault());
+		static ks::IBlendState* blendState = renderEngine->createBlendState(ks::BlendStateDescription::Addition::getDefault(), ks::BlendStateDescription::getDefault());
+		static ks::IDepthStencilState* depthStencilState = renderEngine->createDepthStencilState(ks::DepthStencilStateDescription::getDefault());
+		static ks::IRasterizerState* rasterizerState = renderEngine->createRasterizerState(ks::RasterizerStateDescription::getDefault());
 
 		IRenderBuffer & renderBuffer = *this->renderBuffer;
 		renderBuffer.setClearColor(glm::vec4(0.0, 0.0, 0.0, 0.0));
-		renderBuffer.setViewport(0, 0, frameBuffer->getWidth(), frameBuffer->getHeight());
+		renderBuffer.setViewport(0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
 		renderBuffer.setClearBufferFlags(ks::ClearBufferFlags::color);
 		renderBuffer.setBlendState(*blendState);
 		renderBuffer.setDepthStencilState(*depthStencilState);
 		renderBuffer.setRasterizerState(*rasterizerState);
 		renderBuffer.setPrimitiveTopologyType(ks::PrimitiveTopologyType::trianglelist);
-		renderBuffer.commit(*frameBuffer.get());
-
-		renderEngine->erase(blendState);
-		renderEngine->erase(depthStencilState);
-		renderEngine->erase(rasterizerState);
+		renderBuffer.commit(&frameBuffer);
 	}
 }

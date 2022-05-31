@@ -2,6 +2,7 @@
 #define KSImage_Kernel_hpp
 
 #include <string>
+#include <glm/glm.hpp>
 #include <Foundation/Foundation.hpp>
 #include <KSRenderEngine/KSRenderEngine.hpp>
 #include "KernelUniform.hpp"
@@ -10,6 +11,12 @@
 
 namespace ks
 {
+	struct KSImage_API KernelRenderInstruction
+	{
+	public:
+		std::vector<glm::vec4> sampleSapceRectsNorm;
+	};
+
 	class KSImage_API Kernel : public noncopyable
 	{
 	public:
@@ -34,9 +41,11 @@ namespace ks
 			const unsigned int indexCount,
 			ks::IIndexBuffer::IndexDataType indexDataType) noexcept;
 
-		void setUniform(const std::vector<ks::KernelUniform::Value>& uniformValues, 
-			std::function<ITexture2D*(unsigned int, glm::vec4*)> unretainTexture2D) noexcept;
-		void commit(std::shared_ptr<ks::IFrameBuffer> frameBuffer);
+		void setUniform(const std::vector<ks::KernelUniform::Value>& uniformValues,
+			std::vector<ks::ITexture2D*> textureHandles,
+			const KernelRenderInstruction& renderInstruction) noexcept;
+
+		void commit(ks::IFrameBuffer& frameBuffer);
 	};
 }
 

@@ -19,7 +19,16 @@ rule("Example.deps")
 
 rule("Example.Copy")
     after_build(function (target)
-        os.cp("Resource", target:targetdir())
+        local resourceDir = path.join(target:targetdir(), "Resource")
+        local shaderDir = path.join(resourceDir, "Shader")
+        if os.exists(resourceDir) == false then
+            os.mkdir(resourceDir)
+        end
+        if os.exists(shaderDir) == false then
+            os.mkdir(shaderDir)
+        end
+        os.cp("Shader/*.hlsl", shaderDir)
+        os.cp("Resource/*.jpg", resourceDir)
     end)
 
 rule("Example.Clean")    
@@ -32,6 +41,7 @@ target("Example")
     set_languages("c++17")
     add_files("src/**.cpp")
     add_headerfiles("src/**.h", "src/**.hpp")
+    add_headerfiles("Shader/*.hlsl")
     add_includedirs("src")
     add_syslinks("d3d11")
     add_rules("mode.debug", "mode.release", "Example.deps")

@@ -13,12 +13,6 @@
 
 namespace ks
 {
-	struct KSImage_API KernelRenderInstruction
-	{
-	public:
-		std::vector<glm::vec4> sampleSapceRectsNorm;
-	};
-
 	class KSImage_API Filter: public boost::noncopyable
 	{
 	protected:
@@ -35,6 +29,8 @@ namespace ks
 		std::vector<std::shared_ptr<ks::Image>> getInputImages() const noexcept;
 		
 		const std::shared_ptr<ks::Image> getCurrentOutputImage() const noexcept;
+
+		std::string name;
 	};
 }
 
