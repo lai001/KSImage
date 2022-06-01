@@ -8,7 +8,7 @@
 
 namespace ks
 {
-	class KSImage_API FilterContext : public boost::noncopyable
+	class KSImage_API FilterContext : public noncopyable
 	{
 	public:
 		static FilterContext* create() noexcept;

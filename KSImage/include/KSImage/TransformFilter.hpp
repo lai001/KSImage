@@ -7,15 +7,15 @@
 
 namespace ks
 {
-	class KSImage_API TransformFilter: public ks::Filter
+	class KSImage_API TransformFilter: public Filter
 	{
 	public:
-		std::shared_ptr<ks::Image> inputImage = std::shared_ptr<ks::Image>(nullptr);
+		Image* inputImage = nullptr;
 		glm::mat3 transform = glm::identity<glm::mat3>();
 
-		virtual std::shared_ptr<ks::Image> outputImage(const ks::Rect* rect = nullptr) override;
-		static std::shared_ptr<ks::TransformFilter> create() noexcept;
-		virtual KernelRenderInstruction onPrepare(const ks::Rect& renderRect) override;
+		virtual Image* outputImage(const Rect* rect = nullptr) override;
+		static TransformFilter* create() noexcept;
+		virtual KernelRenderInstruction onPrepare(const Rect& renderRect) override;
 	};
 }
 

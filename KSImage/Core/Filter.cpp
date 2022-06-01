@@ -3,15 +3,19 @@
 
 namespace ks
 {
-	std::shared_ptr<ks::Image> Filter::outputImage(const ks::Rect* rect)
+	ks::Image* Filter::outputImage(const ks::Rect* rect)
 	{
+		if (currentOutputImage)
+		{
+			delete currentOutputImage;
+		}
 		if (rect)
 		{
 			currentOutputImage = ks::Image::create(*rect);
 		}
 		else
 		{
-			std::vector<std::shared_ptr<ks::Image>> images;
+			std::vector<ks::Image*> images;
 			for (size_t i = 0; i < uniformValues.size(); i++)
 			{
 				ks::KernelUniform::Value uniformValue = uniformValues[i];
@@ -24,6 +28,14 @@ namespace ks
 		}
 		currentOutputImage->sourceFilter = this;
 		return currentOutputImage;
+	}
+
+	Filter::~Filter()
+	{
+		if (currentOutputImage)
+		{
+			delete currentOutputImage;
+		}
 	}
 
 	KernelRenderInstruction Filter::onPrepare(const ks::Rect& renderRect)
@@ -43,8 +55,9 @@ namespace ks
 			indexBuffer.data(), indexBuffer.size(), ks::IIndexBuffer::IndexDataType::uint32);
 
 		KernelRenderInstruction instruction;
-		const std::vector<std::shared_ptr<ks::Image>>& inputImages = getInputImages();
-		for (const std::shared_ptr<ks::Image>& inputImage : inputImages)
+		instruction.workingSpacePixelSize = glm::vec2(renderRect.width, renderRect.height);
+		const std::vector<ks::Image*>& inputImages = getInputImages();
+		for (const ks::Image* inputImage : inputImages)
 		{
 			Rect sampleSapceRectNorm;
 			const Rect rect = inputImage->getRect();
@@ -81,9 +94,9 @@ namespace ks
 		return uniformValues;
 	}
 
-	std::vector<std::shared_ptr<ks::Image>> Filter::getInputImages() const noexcept
+	std::vector<ks::Image*> Filter::getInputImages() const noexcept
 	{
-		std::vector<std::shared_ptr<ks::Image>> images;
+		std::vector<ks::Image*> images;
 		for (auto& uniformValue : uniformValues)
 		{
 			if (uniformValue.type == ks::KernelUniform::ValueType::texture2d)
@@ -94,7 +107,7 @@ namespace ks
 		return images;
 	}
 
-	const std::shared_ptr<ks::Image> Filter::getCurrentOutputImage() const noexcept
+	const ks::Image* Filter::getCurrentOutputImage() const noexcept
 	{
 		return currentOutputImage;
 	}

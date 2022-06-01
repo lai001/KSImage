@@ -43,7 +43,7 @@ PS_INPUT main(VS_INPUT input)
 	{
 		FragmentAnalysis::AnalysisResult analysisResult = FragmentAnalysis().analysis(kernelFragmentShader);
 
-		std::shared_ptr<ks::Kernel> kernel = std::make_shared<Kernel>();
+		std::shared_ptr<Kernel> kernel = std::make_shared<Kernel>();
 		kernel->shader = Kernel::renderEngine->createShader(DefaultVertexShaderCode, analysisResult.fragmentShaderCode);
 		kernel->analysisResult = analysisResult;
 		assert(kernel->shader);
@@ -55,7 +55,7 @@ PS_INPUT main(VS_INPUT input)
 		const unsigned int stride,
 		const void * indexBuffer, 
 		const unsigned int indexCount, 
-		ks::IIndexBuffer::IndexDataType indexDataType) noexcept
+		IIndexBuffer::IndexDataType indexDataType) noexcept
 	{
 		assert(renderEngine);
 		assert(shader);
@@ -72,51 +72,55 @@ PS_INPUT main(VS_INPUT input)
 			indexDataType);
 	}
 
-	void Kernel::setUniform(const std::vector<ks::KernelUniform::Value>& uniformValues,
-		std::vector<ks::ITexture2D*> textureHandles,
+	void Kernel::setUniform(const std::vector<KernelUniform::Value>& uniformValues,
+		std::vector<ITexture2D*> textureHandles,
 		const KernelRenderInstruction& renderInstruction) noexcept
 	{
 		assert(analysisResult.uniformInfos.size() == uniformValues.size());
 		assert(renderEngine);
+		
+		setUniform(FragmentAnalysis::ShareInfo::workingSpacePixelSizeUniformName(),
+			ks::UniformValue(renderInstruction.workingSpacePixelSize));
+
 		unsigned int textureIndex = 0;
 		for (size_t i = 0; i < uniformValues.size(); i++)
 		{
-			const ks::KernelUniform::Value value = uniformValues[i];
+			const KernelUniform::Value value = uniformValues[i];
 			assert(analysisResult.uniformInfos[i].type == value.type);
-			if (value.type == ks::KernelUniform::ValueType::texture2d)
+			if (value.type == KernelUniform::ValueType::texture2d)
 			{
 				const std::string texture2DName = FragmentAnalysis::ShareInfo::texture2DName(textureIndex);
 				const glm::vec4 samplerSapce = renderInstruction.sampleSapceRectsNorm[textureIndex];
-				const ks::ITexture2D *texture2d = textureHandles[textureIndex];
+				const ITexture2D *texture2d = textureHandles[textureIndex];
 				assert(texture2d);
 				setTexture2D(texture2DName, *texture2d);
 				const std::string uniformSamplerSpaceName = FragmentAnalysis::ShareInfo::uniformSamplerSpaceName(textureIndex);
-				setUniform(uniformSamplerSpaceName, ks::UniformValue(samplerSapce));
+				setUniform(uniformSamplerSpaceName, UniformValue(samplerSapce));
 				textureIndex += 1;
 			}
 			else
 			{
 				const std::string name = analysisResult.uniformInfos[i].name;
-				const  ks::KernelUniform::ValueType type = analysisResult.uniformInfos[i].type;
+				const  KernelUniform::ValueType type = analysisResult.uniformInfos[i].type;
 				switch (type)
 				{
-				case ks::KernelUniform::ValueType::f32:
-					setUniform(name, ks::UniformValue(value.f32));
+				case KernelUniform::ValueType::f32:
+					setUniform(name, UniformValue(value.f32));
 					break;
-				case ks::KernelUniform::ValueType::vec2:
-					setUniform(name, ks::UniformValue(value.vec2));
+				case KernelUniform::ValueType::vec2:
+					setUniform(name, UniformValue(value.vec2));
 					break;
-				case ks::KernelUniform::ValueType::vec3:
-					setUniform(name, ks::UniformValue(value.vec3));
+				case KernelUniform::ValueType::vec3:
+					setUniform(name, UniformValue(value.vec3));
 					break;
-				case ks::KernelUniform::ValueType::vec4:
-					setUniform(name, ks::UniformValue(value.vec4));
+				case KernelUniform::ValueType::vec4:
+					setUniform(name, UniformValue(value.vec4));
 					break;
-				case ks::KernelUniform::ValueType::mat3:
-					setUniform(name, ks::UniformValue(value.mat3));
+				case KernelUniform::ValueType::mat3:
+					setUniform(name, UniformValue(value.mat3));
 					break;
-				case ks::KernelUniform::ValueType::mat4:
-					setUniform(name, ks::UniformValue(value.mat4));
+				case KernelUniform::ValueType::mat4:
+					setUniform(name, UniformValue(value.mat4));
 					break;
 				default:
 					assert(false);
@@ -126,35 +130,35 @@ PS_INPUT main(VS_INPUT input)
 		}
 	}
 
-	void Kernel::setUniform(const std::string & name, const ks::UniformValue & value) noexcept
+	void Kernel::setUniform(const std::string & name, const UniformValue & value) noexcept
 	{
 		assert(shader);
-		const std::string actualName = fmt::format("{}.{}", ks::FragmentAnalysis::ShareInfo::cBufferBlockName(), name);
+		const std::string actualName = fmt::format("{}.{}", FragmentAnalysis::ShareInfo::cBufferBlockName(), name);
 		shader->setUniform(actualName, value);
 	}
 
-	void Kernel::setTexture2D(const std::string & name, const ks::ITexture2D & texture2D) noexcept
+	void Kernel::setTexture2D(const std::string & name, const ITexture2D & texture2D) noexcept
 	{
 		assert(shader);
 		shader->setTexture2D(name, texture2D);
 	}
 
-	void Kernel::commit(ks::IFrameBuffer& frameBuffer)
+	void Kernel::commit(IFrameBuffer& frameBuffer)
 	{
 		assert(renderEngine);
 
-		static ks::IBlendState* blendState = renderEngine->createBlendState(ks::BlendStateDescription::Addition::getDefault(), ks::BlendStateDescription::getDefault());
-		static ks::IDepthStencilState* depthStencilState = renderEngine->createDepthStencilState(ks::DepthStencilStateDescription::getDefault());
-		static ks::IRasterizerState* rasterizerState = renderEngine->createRasterizerState(ks::RasterizerStateDescription::getDefault());
+		static IBlendState* blendState = renderEngine->createBlendState(BlendStateDescription::Addition::getDefault(), BlendStateDescription::getDefault());
+		static IDepthStencilState* depthStencilState = renderEngine->createDepthStencilState(DepthStencilStateDescription::getDefault());
+		static IRasterizerState* rasterizerState = renderEngine->createRasterizerState(RasterizerStateDescription::getDefault());
 
 		IRenderBuffer & renderBuffer = *this->renderBuffer;
 		renderBuffer.setClearColor(glm::vec4(0.0, 0.0, 0.0, 0.0));
 		renderBuffer.setViewport(0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
-		renderBuffer.setClearBufferFlags(ks::ClearBufferFlags::color);
+		renderBuffer.setClearBufferFlags(ClearBufferFlags::color);
 		renderBuffer.setBlendState(*blendState);
 		renderBuffer.setDepthStencilState(*depthStencilState);
 		renderBuffer.setRasterizerState(*rasterizerState);
-		renderBuffer.setPrimitiveTopologyType(ks::PrimitiveTopologyType::trianglelist);
+		renderBuffer.setPrimitiveTopologyType(PrimitiveTopologyType::trianglelist);
 		renderBuffer.commit(&frameBuffer);
 	}
 }

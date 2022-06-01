@@ -10,7 +10,7 @@
 
 namespace ks
 {
-	class KSImage_API KernelUniform : public boost::noncopyable
+	class KSImage_API KernelUniform : public noncopyable
 	{
 	public:
 		enum class ValueType
@@ -36,95 +36,8 @@ namespace ks
 				glm::vec4 vec4;
 				glm::mat3 mat3;
 				glm::mat4 mat4;
-				std::shared_ptr<ks::Image> texture2d = std::shared_ptr<ks::Image>(nullptr);
+				ks::Image* texture2d = nullptr;
 			};
-			Value()
-			{
-
-			}
-			~Value()
-			{
-
-			}
-
-			Value& operator=(const Value & value)
-			{
-				Value v;
-				v.type = value.type;
-				switch (value.type)
-				{
-				case ValueType::f32:
-					v.f32 = value.f32;
-					break;
-
-				case ValueType::vec2:
-					v.vec2 = value.vec2;
-					break;
-
-				case ValueType::vec3:
-					v.vec3 = value.vec3;
-					break;
-
-				case ValueType::vec4:
-					v.vec4 = value.vec4;
-					break;
-
-				case ValueType::mat3:
-					v.mat3 = value.mat3;
-					break;
-
-				case ValueType::mat4:
-					v.mat4 = value.mat4;
-					break;
-
-				case ValueType::texture2d:
-					v.texture2d = value.texture2d;
-					break;
-
-				default:
-					break;
-				}
-				return v;
-			}
-
-			Value(const Value& value)
-			{
-				this->type = value.type;
-				switch (value.type)
-				{
-				case ValueType::f32:
-					this->f32 = value.f32;
-					break;
-
-				case ValueType::vec2:
-					this->vec2 = value.vec2;
-					break;
-
-				case ValueType::vec3:
-					this->vec3 = value.vec3;
-					break;
-
-				case ValueType::vec4:
-					this->vec4 = value.vec4;
-					break;
-
-
-				case ValueType::mat3:
-					this->mat3 = value.mat3;
-					break;
-
-				case ValueType::mat4:
-					this->mat4 = value.mat4;
-					break;
-
-				case ValueType::texture2d:
-					this->texture2d = value.texture2d;
-					break;
-
-				default:
-					break;
-				}
-			}
 
 			Value(float v)						:type(ValueType::f32),			f32(v) { }
 			Value(glm::vec2 v)					:type(ValueType::vec2),			vec2(v) { }
@@ -132,7 +45,7 @@ namespace ks
 			Value(glm::vec4 v)					:type(ValueType::vec4),			vec4(v) { }
 			Value(glm::mat3 v)					:type(ValueType::mat3),			mat3(v) { }
 			Value(glm::mat4 v)					:type(ValueType::mat4),			mat4(v) { }
-			Value(std::shared_ptr<ks::Image> v) :type(ValueType::texture2d),	texture2d(v) { }
+			Value(ks::Image* v) :type(ValueType::texture2d),	texture2d(v) { }
 		
 			const void* getData() const noexcept
 			{

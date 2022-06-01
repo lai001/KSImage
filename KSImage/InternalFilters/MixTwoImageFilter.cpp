@@ -2,13 +2,13 @@
 
 namespace ks
 {
-	std::shared_ptr<ks::Image> ks::MixTwoImageFilter::outputImage(const ks::Rect* rect)
+	ks::Image* ks::MixTwoImageFilter::outputImage(const ks::Rect* rect)
 	{
 		setValues({ inputImage, u_intensity, inputTargetImage });
 		return Filter::outputImage(rect);
 	}
 
-	std::shared_ptr<MixTwoImageFilter> MixTwoImageFilter::create() noexcept
+	MixTwoImageFilter* MixTwoImageFilter::create() noexcept
 	{
 		static std::shared_ptr<Kernel> kernel = Kernel::create(R"(
 kernel float4 fragmentShader(Texture2D inputImage, float intensity, Texture2D inputTargetImage, PS_INPUT ps_input)
@@ -21,7 +21,7 @@ kernel float4 fragmentShader(Texture2D inputImage, float intensity, Texture2D in
 }
 )");
 
-		std::shared_ptr<MixTwoImageFilter> ptr = std::make_shared<MixTwoImageFilter>();
+		MixTwoImageFilter* ptr = new MixTwoImageFilter();
 		ptr->kernel = kernel;
 		return ptr;
 	}

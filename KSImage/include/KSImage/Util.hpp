@@ -15,9 +15,7 @@ namespace ks
 		std::string fragmentPath;
 	};
 
-	Rect KSImage_API getUnionRect(const std::vector<ks::Image>& images) noexcept;
-
-	Rect KSImage_API getUnionRect(const std::vector<std::shared_ptr<ks::Image>>& images) noexcept;
+	Rect KSImage_API getUnionRect(const std::vector<ks::Image*>& images) noexcept;
 
 	Rect KSImage_API makeRectAspectFit(const float aspectWidthRatio, const float aspectHeightRatio, const Rect& boundingRect) noexcept;
 

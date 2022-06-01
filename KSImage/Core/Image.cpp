@@ -13,39 +13,39 @@ namespace ks
 		}
 	}
 
-	std::shared_ptr<Image> Image::create()
+	Image* Image::create()
 	{
-		std::shared_ptr<Image> image = std::make_shared<Image>();
+		Image* image = new Image();
 		return image;
 	}
 
-	std::shared_ptr<Image> Image::create(const ks::Rect & rect)
+	Image* Image::create(const Rect & rect)
 	{
-		std::shared_ptr<Image> image = std::make_shared<Image>();
+		Image* image = new Image();
 		image->_rect = rect;
 		return image;
 	}
 
-	std::shared_ptr<Image> ks::Image::create(const std::string & filePath)
+	Image* Image::create(const std::string & filePath)
 	{
-		assert(ks::IImageDecoder::shared);
-		ks::PixelBuffer* pixelBuffer = ks::IImageDecoder::shared->create(filePath);
+		assert(IImageDecoder::shared);
+		PixelBuffer* pixelBuffer = IImageDecoder::shared->create(filePath);
 		return createRetain(pixelBuffer);
 	}
 
-	std::shared_ptr<Image> Image::createRetain(ks::PixelBuffer* pixelBuffer)
+	Image* Image::createRetain(PixelBuffer* pixelBuffer)
 	{
 		assert(pixelBuffer);
-		std::shared_ptr<Image> image = std::make_shared<ks::Image>();
+		Image* image = new Image();
 		image->format = pixelFormatToImageFormat(pixelBuffer->getType());
 		image->pixelBuffer = pixelBuffer;
-		image->_rect = ks::Rect(0, 0, pixelBuffer->getWidth(), pixelBuffer->getHeight());
+		image->_rect = Rect(0, 0, pixelBuffer->getWidth(), pixelBuffer->getHeight());
 		return image;
 	}
 
 	const unsigned char * Image::getData() const noexcept
 	{
-		if (ks::PixelBuffer* buffer = pixelBuffer)
+		if (PixelBuffer* buffer = pixelBuffer)
 		{
 			assert(isCompatible(buffer->getType()));
 			return buffer->getMutableData()[0];
@@ -58,7 +58,7 @@ namespace ks
 
 	const int Image::getSourceWidth() const noexcept
 	{
-		if (ks::PixelBuffer* buffer = pixelBuffer)
+		if (PixelBuffer* buffer = pixelBuffer)
 		{
 			return buffer->getWidth();
 		}
@@ -70,7 +70,7 @@ namespace ks
 
 	const int Image::getSourceHeight() const noexcept
 	{
-		if (ks::PixelBuffer* buffer = pixelBuffer)
+		if (PixelBuffer* buffer = pixelBuffer)
 		{
 			return buffer->getHeight();
 		}
@@ -82,7 +82,7 @@ namespace ks
 
 	const int Image::getSourceChannels() const noexcept
 	{
-		if (ks::PixelBuffer* buffer = pixelBuffer)
+		if (PixelBuffer* buffer = pixelBuffer)
 		{
 			return buffer->getChannels();
 		}
@@ -107,20 +107,30 @@ namespace ks
 		return sourceFilter;
 	}
 
-	bool Image::isCompatible(const ks::PixelBuffer::FormatType type) noexcept
+	bool Image::isCompatible(const PixelBuffer::FormatType type) noexcept
 	{
-		std::unordered_map<ks::PixelBuffer::FormatType, ks::Image::FormatType> dic;
-		dic[ks::PixelBuffer::FormatType::rgb8] = ks::Image::FormatType::rgb8;
-		dic[ks::PixelBuffer::FormatType::rgba8] = ks::Image::FormatType::rgba8;
+		std::unordered_map<PixelBuffer::FormatType, Image::FormatType> dic;
+		dic[PixelBuffer::FormatType::rgb8] = Image::FormatType::rgb8;
+		dic[PixelBuffer::FormatType::rgba8] = Image::FormatType::rgba8;
 		return dic.end() != dic.find(type);
 	}
 
-	ks::Image::FormatType Image::pixelFormatToImageFormat(const ks::PixelBuffer::FormatType type) noexcept
+	Image::FormatType Image::pixelFormatToImageFormat(const PixelBuffer::FormatType type) noexcept
 	{
-		std::unordered_map<ks::PixelBuffer::FormatType, ks::Image::FormatType> dic;
-		dic[ks::PixelBuffer::FormatType::rgb8] = ks::Image::FormatType::rgb8;
-		dic[ks::PixelBuffer::FormatType::rgba8] = ks::Image::FormatType::rgba8;
+		std::unordered_map<PixelBuffer::FormatType, Image::FormatType> dic;
+		dic[PixelBuffer::FormatType::rgb8] = Image::FormatType::rgb8;
+		dic[PixelBuffer::FormatType::rgba8] = Image::FormatType::rgba8;
 		assert(isCompatible(type));
 		return dic[type];
+	}
+
+	const PixelBuffer * Image::getPixelBuffer() const noexcept
+	{
+		return pixelBuffer;
+	}
+
+	PixelBuffer * Image::getMutablePixelBuffer() const noexcept
+	{
+		return pixelBuffer;
 	}
 }

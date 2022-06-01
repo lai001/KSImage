@@ -6,11 +6,12 @@
 #include "Filter.hpp"
 #include "Image.hpp"
 #include "Kernel.hpp"
-#include "MixTwoImageFilter.hpp"
-#include "TransformFilter.hpp"
 #include "Util.hpp"
 #include "FragmentAnalysis.hpp"
 #include "RectTransDescription.hpp"
 #include "ImageDecoder.hpp"
+
+#include "MixTwoImageFilter.hpp"
+#include "TransformFilter.hpp"
 
 #endif // !KSImage_KSImage_hpp

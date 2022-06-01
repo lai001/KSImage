@@ -28,10 +28,10 @@ namespace ks
 		~Image();
 
 	public:
-		static std::shared_ptr<Image> create();
-		static std::shared_ptr<Image> create(const ks::Rect& rect);
-		static std::shared_ptr<Image> create(const std::string& filePath);
-		static std::shared_ptr<Image> createRetain(ks::PixelBuffer* pixelBuffer);
+		static Image* create();
+		static Image* create(const ks::Rect& rect);
+		static Image* create(const std::string& filePath);
+		static Image* createRetain(ks::PixelBuffer* pixelBuffer);
 
 		const unsigned char* getData() const noexcept;
 		const int getSourceWidth() const noexcept;
@@ -44,6 +44,8 @@ namespace ks
 
 		static bool isCompatible(const ks::PixelBuffer::FormatType type) noexcept;
 		static ks::Image::FormatType pixelFormatToImageFormat(const ks::PixelBuffer::FormatType type) noexcept;
+		const ks::PixelBuffer* getPixelBuffer() const noexcept;
+		ks::PixelBuffer* getMutablePixelBuffer() const noexcept;
 	};
 }
 

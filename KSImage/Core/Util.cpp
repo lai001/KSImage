@@ -4,17 +4,7 @@
 
 namespace ks
 {
-	Rect getUnionRect(const std::vector<ks::Image>& images) noexcept
-	{
-		Rect rect;
-		for (const auto& image : images)
-		{
-			rect = rect.unionWithOther(image.getRect());
-		}
-		return rect;
-	}
-
-	Rect getUnionRect(const std::vector<std::shared_ptr<ks::Image>>& images) noexcept
+	Rect getUnionRect(const std::vector<ks::Image*>& images) noexcept
 	{
 		Rect rect;
 		for (const auto& image : images)

@@ -15,6 +15,7 @@ namespace ks
 	{
 	public:
 		std::vector<glm::vec4> sampleSapceRectsNorm;
+		glm::vec2 workingSpacePixelSize;
 	};
 
 	class KSImage_API Kernel : public noncopyable

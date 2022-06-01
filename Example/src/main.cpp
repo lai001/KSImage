@@ -23,6 +23,7 @@ struct Transform
 struct DataSource
 {
 	float intensity = 0.5;
+	float progress = 0.5;
 	Transform transform0;
 	Transform transform1;
 	bool isEnableDraw = true;
@@ -72,6 +73,7 @@ void ImGuiDraw()
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::NewLine();
 	ImGui::SliderFloat("Intensity", &dataSource.intensity, 0.0, 1.0);
+	ImGui::SliderFloat("Progress", &dataSource.progress, 0.0, 1.0);
 	ImGui::NewLine();
 	ImGui::DragFloat("Angle", &dataSource.transform0.angle);
 	ImGui::DragFloat("Scale", &dataSource.transform0.scale, 0.01, 0.1, 3.0);
@@ -174,28 +176,30 @@ void drawResult(const std::shared_ptr<ks::PixelBuffer> pixelBuffer)
 
 void frameTick()
 {
-	static std::shared_ptr<ks::Image> inputImage = ks::Image::create(ks::Application::getResourcePath("cat.jpg"));
-	static std::shared_ptr<ks::Image> inputTargetImage = ks::Image::create(ks::Application::getResourcePath("environmental.jpg"));
+	
+	static std::shared_ptr<ks::Image> inputImage = std::shared_ptr<ks::Image>(ks::Image::create(ks::Application::getResourcePath("cat.jpg")));
 
-	static std::shared_ptr<ks::TransformFilter> transformFilter0 = ks::TransformFilter::create();
+	static std::shared_ptr<ks::Image> inputTargetImage = std::shared_ptr<ks::Image>(ks::Image::create(ks::Application::getResourcePath("environmental.jpg")));
+	
+	static std::shared_ptr<ks::TransformFilter> transformFilter0 = std::shared_ptr<ks::TransformFilter>(ks::TransformFilter::create());
 	transformFilter0->name = "transformFilter0";
-	transformFilter0->inputImage = inputImage;
+	transformFilter0->inputImage = inputImage.get();
 	transformFilter0->transform = ks::RectTransDescription(inputImage->getRect())
 		.scaleAroundCenter(glm::vec2(dataSource.transform0.scale))
 		.rotateAroundCenter(glm::radians<float>(dataSource.transform0.angle))
 		.translate(dataSource.transform0.offset)
 		.getTransform();
 
-	static std::shared_ptr<ks::TransformFilter> transformFilter1 = ks::TransformFilter::create();
+	static std::shared_ptr<ks::TransformFilter> transformFilter1 = std::shared_ptr<ks::TransformFilter>(ks::TransformFilter::create());
 	transformFilter1->name = "transformFilter1";
-	transformFilter1->inputImage = inputTargetImage;
+	transformFilter1->inputImage = inputTargetImage.get();
 	transformFilter1->transform = ks::RectTransDescription(inputTargetImage->getRect())
 		.scaleAroundCenter(glm::vec2(dataSource.transform1.scale))
 		.rotateAroundCenter(glm::radians<float>(dataSource.transform1.angle))
 		.translate(dataSource.transform1.offset)
 		.getTransform();
 
-	static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter0 = ks::MixTwoImageFilter::create();
+	static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter0 = std::shared_ptr<ks::MixTwoImageFilter>(ks::MixTwoImageFilter::create());
 	mixTwoImageFilter0->name = "mixTwoImageFilter0";
 	mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
 	mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
@@ -204,8 +208,8 @@ void frameTick()
 	static std::unique_ptr<ks::FilterContext> context = std::unique_ptr<ks::FilterContext>(ks::FilterContext::create());
 
 	std::shared_ptr<ks::PixelBuffer> bufferPtr = 
-		std::shared_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage().get(), ks::Rect(0.0, 0.0, 1280, 720)));
-
+		std::shared_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage(), ks::Rect(0.0, 0.0, 1280, 720)));
+	  
 	if (dataSource.isSaveImage && dataSource.isSaveImage())
 	{
 		std::string targetPath = fmt::format("{}/{}.png", ks::Application::getAppDir(), "KSImage");

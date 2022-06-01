@@ -10,11 +10,11 @@ namespace ks
 	{
 	public:
 		float u_intensity = 0.0;
-		std::shared_ptr<ks::Image> inputImage = std::shared_ptr<ks::Image>(nullptr);
-		std::shared_ptr<ks::Image> inputTargetImage = std::shared_ptr<ks::Image>(nullptr);
+		ks::Image* inputImage = nullptr;
+		ks::Image* inputTargetImage = nullptr;
 
-		virtual std::shared_ptr<ks::Image> outputImage(const ks::Rect* rect = nullptr) override;
-		static std::shared_ptr<MixTwoImageFilter> create() noexcept;
+		virtual ks::Image* outputImage(const ks::Rect* rect = nullptr) override;
+		static MixTwoImageFilter* create() noexcept;
 
 	};
 }

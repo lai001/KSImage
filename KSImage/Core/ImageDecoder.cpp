@@ -3,6 +3,6 @@
 namespace ks
 {
 
-	ks::IImageDecoder* IImageDecoder::shared = nullptr;
+	IImageDecoder* IImageDecoder::shared = nullptr;
 
 }

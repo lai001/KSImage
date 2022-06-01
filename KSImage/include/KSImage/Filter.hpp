@@ -13,22 +13,24 @@
 
 namespace ks
 {
-	class KSImage_API Filter: public boost::noncopyable
+	class KSImage_API Filter: public noncopyable
 	{
 	protected:
 		std::shared_ptr<ks::Kernel> kernel = std::shared_ptr<ks::Kernel>(nullptr);
-		std::shared_ptr<ks::Image> currentOutputImage = std::shared_ptr<ks::Image>(nullptr);
+		ks::Image* currentOutputImage = nullptr;
 		std::vector<ks::KernelUniform::Value> uniformValues;
+
+		~Filter();
 
 	public:
 		virtual KernelRenderInstruction onPrepare(const ks::Rect& renderRect);
-		virtual std::shared_ptr<ks::Image> outputImage(const ks::Rect* rect = nullptr);
+		virtual ks::Image* outputImage(const ks::Rect* rect = nullptr);
 		void setValues(const std::vector<ks::KernelUniform::Value>& uniformValues) noexcept;
 		std::shared_ptr<ks::Kernel> getKernel() const noexcept;
 		std::vector<ks::KernelUniform::Value> getUniformValues() const noexcept;
-		std::vector<std::shared_ptr<ks::Image>> getInputImages() const noexcept;
+		std::vector<ks::Image*> getInputImages() const noexcept;
 		
-		const std::shared_ptr<ks::Image> getCurrentOutputImage() const noexcept;
+		const ks::Image* getCurrentOutputImage() const noexcept;
 
 		std::string name;
 	};
