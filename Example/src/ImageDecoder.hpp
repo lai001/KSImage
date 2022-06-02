@@ -1,10 +1,7 @@
-#ifndef IMAGEDECODERHPP
-#define IMAGEDECODERHPP
+#ifndef KSImage_Example_src_ImageDecoder_hpp
+#define KSImage_Example_src_ImageDecoder_hpp
 
-//#include <stb_image_write.h>
-//#include <stb_image.h>
 #include <KSImage/KSImage.hpp>
-
 
 class ImageDecoder : public ks::IImageDecoder
 {
@@ -12,4 +9,4 @@ public:
 	virtual ks::PixelBuffer * create(const std::string & filePath) override;
 };
 
-#endif // !IMAGEDECODERHPP
+#endif // !KSImage_Example_src_ImageDecoder_hpp

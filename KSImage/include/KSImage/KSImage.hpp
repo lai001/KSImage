@@ -11,7 +11,11 @@
 #include "RectTransDescription.hpp"
 #include "ImageDecoder.hpp"
 
-#include "MixTwoImageFilter.hpp"
-#include "TransformFilter.hpp"
+#include "InternalFilters/MixTwoImageFilter.hpp"
+#include "InternalFilters/TransformFilter.hpp"
+#include "InternalFilters/PassthroughFilter.hpp"
+#include "InternalFilters/LutFilter.hpp"
+#include "InternalFilters/BlurFilter.hpp"
+#include "InternalFilters/GrayscaleFilter.hpp"
 
 #endif // !KSImage_KSImage_hpp

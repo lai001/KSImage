@@ -1,8 +1,8 @@
-#include "MixTwoImageFilter.hpp"
+#include "InternalFilters/MixTwoImageFilter.hpp"
 
 namespace ks
 {
-	ks::Image* ks::MixTwoImageFilter::outputImage(const ks::Rect* rect)
+	Image* MixTwoImageFilter::outputImage(const Rect* rect)
 	{
 		setValues({ inputImage, u_intensity, inputTargetImage });
 		return Filter::outputImage(rect);

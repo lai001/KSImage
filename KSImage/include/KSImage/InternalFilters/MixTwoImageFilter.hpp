@@ -1,5 +1,5 @@
-#ifndef KSImage_MixTwoImageFilter_hpp
-#define KSImage_MixTwoImageFilter_hpp
+#ifndef KSImage_InternalFilters_MixTwoImageFilter_hpp
+#define KSImage_InternalFilters_MixTwoImageFilter_hpp
 
 #include "Filter.hpp"
 #include "defs.hpp"
@@ -19,4 +19,4 @@ namespace ks
 	};
 }
 
-#endif // !KSImage_MixTwoImageFilter_hpp
+#endif // !KSImage_InternalFilters_MixTwoImageFilter_hpp

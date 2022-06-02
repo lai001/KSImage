@@ -1,6 +1,5 @@
-
-#ifndef WINDOWS_PLATFORM_HPP
-#define WINDOWS_PLATFORM_HPP
+#ifndef KSImage_Example_src_Platform_WindowsPlatform_hpp
+#define KSImage_Example_src_Platform_WindowsPlatform_hpp
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -9,7 +8,7 @@
 #include <tchar.h>
 #include <Foundation/Foundation.hpp>
 
-class WindowsPlatform : public boost::noncopyable
+class WindowsPlatform : public ks::noncopyable
 {
 public:
 	struct Configuration
@@ -55,4 +54,4 @@ private:
 };
 
 #endif // _WIN32
-#endif // !WINDOWS_PLATFORM_HPP
+#endif // !KSImage_Example_src_Platform_WindowsPlatform_hpp

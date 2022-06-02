@@ -1,67 +1,28 @@
 #include "KernelUniform.hpp"
+#include <glm/gtc/type_ptr.hpp>
+#include <KSRenderEngine/KSRenderEngine.hpp>
 
 namespace ks
 {
-	KernelUniform::KernelUniform(const std::string & name, const ValueType & type)
-		: name(name), type(type)
+	KernelUniform::Info::Info(const std::string & name, const ValueType type)
+		:name(name), type(type)
 	{
-	}
-
-	KernelUniform::KernelUniform(const Info& Info)
-		:name(Info.name), type(Info.type)
-	{
-	}
-
-	KernelUniform::~KernelUniform()
-	{
-	}
-
-	void KernelUniform::setValue(const Value& value) noexcept
-	{
-		assert(value.type != ks::KernelUniform::ValueType::texture2d);
-		assert(value.type == this->type);
-
-		Value tmpValue = value;
-		
-		switch (value.type)
-		{
-		case KernelUniform::ValueType::f32:
-			tmpValue.vec4 = glm::vec4(value.f32);
-			break;
-
-		case KernelUniform::ValueType::vec2:
-			tmpValue.vec4 = glm::vec4(value.vec2, 0.0, 0.0);
-			break;
-
-		case KernelUniform::ValueType::vec3:
-			tmpValue.vec4 = glm::vec4(value.vec3, 0.0);
-			break;
-
-		case KernelUniform::ValueType::vec4:
-			tmpValue.vec4 = value.vec4;
-			break;
-
-		case KernelUniform::ValueType::mat3:
-			tmpValue.mat3 = value.mat3;
-			break;
-
-		case KernelUniform::ValueType::mat4:
-			tmpValue.mat4 = value.mat4;
-			break;
-
-		default:
-			break;
-		}
 
 	}
+}
 
-	std::string KernelUniform::getName() const noexcept
-	{
-		return name;
-	}
+namespace ks
+{
+	KernelUniform::Value::Value(float v) : type(ValueType::f32), f32(v) { }
+	KernelUniform::Value::Value(glm::vec2 v) : type(ValueType::vec2), vec2(v) { }
+	KernelUniform::Value::Value(glm::vec3 v) : type(ValueType::vec3), vec3(v) { }
+	KernelUniform::Value::Value(glm::vec4 v) : type(ValueType::vec4), vec4(v) { }
+	KernelUniform::Value::Value(glm::mat3 v) : type(ValueType::mat3), mat3(v) { }
+	KernelUniform::Value::Value(glm::mat4 v) : type(ValueType::mat4), mat4(v) { }
+	KernelUniform::Value::Value(ks::Image* v) : type(ValueType::texture2d), texture2d(v) { }
 
-	ks::KernelUniform::ValueType KernelUniform::getType() const noexcept
+	const void * KernelUniform::Value::getData() const noexcept
 	{
-		return type;
+		return &this->f32;
 	}
 }

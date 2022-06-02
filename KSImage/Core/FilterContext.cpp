@@ -3,7 +3,7 @@
 #include "FragmentAnalysis.hpp"
 #include "Util.hpp"
 #include "Filter.hpp"
-#include "PassthroughFilter.hpp"
+#include "InternalFilters/PassthroughFilter.hpp"
 
 namespace ks
 {

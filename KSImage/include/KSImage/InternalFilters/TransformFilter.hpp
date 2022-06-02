@@ -1,7 +1,8 @@
-#ifndef KSImage_TransformFilter_hpp
-#define KSImage_TransformFilter_hpp
+#ifndef KSImage_InternalFilters_TransformFilter_hpp
+#define KSImage_InternalFilters_TransformFilter_hpp
 
 #include <glm/glm.hpp>
+#include <glm/ext/matrix_transform.hpp>
 #include "Filter.hpp"
 #include "defs.hpp"
 
@@ -19,4 +20,4 @@ namespace ks
 	};
 }
 
-#endif // !KSImage_TransformFilter_hpp
+#endif // !KSImage_InternalFilters_TransformFilter_hpp

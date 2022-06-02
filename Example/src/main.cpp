@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/format.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <Foundation/Foundation.hpp>
 #include <KSImage/KSImage.hpp>
@@ -22,8 +23,8 @@ struct Transform
 
 struct DataSource
 {
-	float intensity = 0.5;
-	float progress = 0.5;
+	float mixFactor = 0.5;
+	float lutIntensity = 0.5;
 	Transform transform0;
 	Transform transform1;
 	bool isEnableDraw = true;
@@ -72,8 +73,8 @@ void ImGuiDraw()
 
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::NewLine();
-	ImGui::SliderFloat("Intensity", &dataSource.intensity, 0.0, 1.0);
-	ImGui::SliderFloat("Progress", &dataSource.progress, 0.0, 1.0);
+	ImGui::SliderFloat("MixFactor", &dataSource.mixFactor, 0.0, 1.0);
+	ImGui::SliderFloat("LutIntensity", &dataSource.lutIntensity, 0.0, 1.0);
 	ImGui::NewLine();
 	ImGui::DragFloat("Angle", &dataSource.transform0.angle);
 	ImGui::DragFloat("Scale", &dataSource.transform0.scale, 0.01, 0.1, 3.0);
@@ -176,14 +177,14 @@ void drawResult(const std::shared_ptr<ks::PixelBuffer> pixelBuffer)
 
 void frameTick()
 {
-	
 	static std::shared_ptr<ks::Image> inputImage = std::shared_ptr<ks::Image>(ks::Image::create(ks::Application::getResourcePath("cat.jpg")));
 
 	static std::shared_ptr<ks::Image> inputTargetImage = std::shared_ptr<ks::Image>(ks::Image::create(ks::Application::getResourcePath("environmental.jpg")));
+
+	static std::shared_ptr<ks::Image> warmthLutImage = std::shared_ptr<ks::Image>(ks::Image::create(ks::Application::getResourcePath("warmth.png")));
 	
 	static std::shared_ptr<ks::TransformFilter> transformFilter0 = std::shared_ptr<ks::TransformFilter>(ks::TransformFilter::create());
 	transformFilter0->name = "transformFilter0";
-	transformFilter0->inputImage = inputImage.get();
 	transformFilter0->transform = ks::RectTransDescription(inputImage->getRect())
 		.scaleAroundCenter(glm::vec2(dataSource.transform0.scale))
 		.rotateAroundCenter(glm::radians<float>(dataSource.transform0.angle))
@@ -192,7 +193,6 @@ void frameTick()
 
 	static std::shared_ptr<ks::TransformFilter> transformFilter1 = std::shared_ptr<ks::TransformFilter>(ks::TransformFilter::create());
 	transformFilter1->name = "transformFilter1";
-	transformFilter1->inputImage = inputTargetImage.get();
 	transformFilter1->transform = ks::RectTransDescription(inputTargetImage->getRect())
 		.scaleAroundCenter(glm::vec2(dataSource.transform1.scale))
 		.rotateAroundCenter(glm::radians<float>(dataSource.transform1.angle))
@@ -201,9 +201,31 @@ void frameTick()
 
 	static std::shared_ptr<ks::MixTwoImageFilter> mixTwoImageFilter0 = std::shared_ptr<ks::MixTwoImageFilter>(ks::MixTwoImageFilter::create());
 	mixTwoImageFilter0->name = "mixTwoImageFilter0";
-	mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
-	mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
-	mixTwoImageFilter0->u_intensity = dataSource.intensity;
+	mixTwoImageFilter0->u_intensity = dataSource.mixFactor;
+
+	static std::shared_ptr<ks::LutFilter> lutFilter0 = std::shared_ptr<ks::LutFilter>(ks::LutFilter::create());
+	lutFilter0->name = "lutFilter0";
+	lutFilter0->lutImage = warmthLutImage.get();
+	lutFilter0->intensity = dataSource.lutIntensity;
+
+	static std::shared_ptr<ks::GrayscaleFilter> grayscaleFilter0 = std::shared_ptr<ks::GrayscaleFilter>(ks::GrayscaleFilter::create());
+	grayscaleFilter0->name = "grayscaleFilter0";
+
+	static std::shared_ptr<ks::BlurFilter> blurFilter0 = std::shared_ptr<ks::BlurFilter>(ks::BlurFilter::create());
+	blurFilter0->name = "blurFilter0";
+
+	{
+		blurFilter0->inputImage = inputImage.get();
+		lutFilter0->inputImage = inputTargetImage.get();
+
+		//grayscaleFilter0->inputImage = blurFilter0->outputImage();
+
+		transformFilter0->inputImage = blurFilter0->outputImage();
+		transformFilter1->inputImage = lutFilter0->outputImage();
+
+		mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
+		mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
+	}
 
 	static std::unique_ptr<ks::FilterContext> context = std::unique_ptr<ks::FilterContext>(ks::FilterContext::create());
 

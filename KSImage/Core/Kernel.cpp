@@ -80,7 +80,7 @@ PS_INPUT main(VS_INPUT input)
 		assert(renderEngine);
 		
 		setUniform(FragmentAnalysis::ShareInfo::workingSpacePixelSizeUniformName(),
-			ks::UniformValue(renderInstruction.workingSpacePixelSize));
+			UniformValue(renderInstruction.workingSpacePixelSize));
 
 		unsigned int textureIndex = 0;
 		for (size_t i = 0; i < uniformValues.size(); i++)

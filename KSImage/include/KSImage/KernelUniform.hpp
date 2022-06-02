@@ -2,9 +2,7 @@
 #define KSImage_KernelUniform_hpp
 
 #include <Foundation/Foundation.hpp>
-#include <KSRenderEngine/KSRenderEngine.hpp>
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include "Image.hpp"
 #include "defs.hpp"
 
@@ -39,38 +37,23 @@ namespace ks
 				ks::Image* texture2d = nullptr;
 			};
 
-			Value(float v)						:type(ValueType::f32),			f32(v) { }
-			Value(glm::vec2 v)					:type(ValueType::vec2),			vec2(v) { }
-			Value(glm::vec3 v)					:type(ValueType::vec3),			vec3(v) { }
-			Value(glm::vec4 v)					:type(ValueType::vec4),			vec4(v) { }
-			Value(glm::mat3 v)					:type(ValueType::mat3),			mat3(v) { }
-			Value(glm::mat4 v)					:type(ValueType::mat4),			mat4(v) { }
-			Value(ks::Image* v) :type(ValueType::texture2d),	texture2d(v) { }
-		
-			const void* getData() const noexcept
-			{
-				return &this->f32;
-			}
+			Value(float v);
+			Value(glm::vec2 v);
+			Value(glm::vec3 v);
+			Value(glm::vec4 v);
+			Value(glm::mat3 v);
+			Value(glm::mat4 v);
+			Value(ks::Image* v);
+
+			const void* getData() const noexcept;
 		};
 
 		struct Info
 		{
 			std::string name;
 			ValueType type;
-			explicit Info(const std::string& name, const ValueType type) :name(name), type(type) { }
+			explicit Info(const std::string& name, const ValueType type);
 		};
-
-	private:
-		std::string name;
-		ValueType type;
-
-	public:
-		KernelUniform(const std::string& name, const ValueType& type);
-		KernelUniform(const Info& Info);
-		~KernelUniform();
-		void setValue(const Value& value) noexcept;
-		std::string getName() const noexcept;
-		ks::KernelUniform::ValueType getType() const noexcept;
 	};
 }
 

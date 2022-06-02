@@ -9,12 +9,6 @@
 
 namespace ks
 {
-	struct KSImage_API ShaderPaire
-	{
-		std::string vertexPath;
-		std::string fragmentPath;
-	};
-
 	Rect KSImage_API getUnionRect(const std::vector<ks::Image*>& images) noexcept;
 
 	Rect KSImage_API makeRectAspectFit(const float aspectWidthRatio, const float aspectHeightRatio, const Rect& boundingRect) noexcept;
@@ -22,6 +16,8 @@ namespace ks
 	ks::RectTransDescription KSImage_API convertToNDC(const ks::RectTransDescription& des) noexcept;
 
 	ks::RectTransDescription KSImage_API convertToNDC(const ks::RectTransDescription& des, const ks::Rect& boundingBox) noexcept;
+
+	ks::PixelBuffer* KSImage_API createOriginLUT(const unsigned int cubeLength = 64) noexcept;
 }
 
 #endif // !KSImage_Util_hpp

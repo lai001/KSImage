@@ -1,10 +1,11 @@
 #include "Util.hpp"
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace ks
 {
-	Rect getUnionRect(const std::vector<ks::Image*>& images) noexcept
+	Rect getUnionRect(const std::vector<Image*>& images) noexcept
 	{
 		Rect rect;
 		for (const auto& image : images)
@@ -26,12 +27,12 @@ namespace ks
 		return Rect(x, y, width, height);
 	}
 
-	ks::RectTransDescription KSImage_API convertToNDC(const ks::RectTransDescription& des) noexcept
+	RectTransDescription KSImage_API convertToNDC(const RectTransDescription& des) noexcept
 	{
 		return convertToNDC(des, des.getBound());
 	}
 
-	ks::RectTransDescription KSImage_API convertToNDC(const ks::RectTransDescription & des, const ks::Rect & boundingBox) noexcept
+	RectTransDescription KSImage_API convertToNDC(const RectTransDescription & des, const Rect & boundingBox) noexcept
 	{
 		const glm::mat4 projection = glm::ortho<float>(boundingBox.x, boundingBox.getMaxX(), boundingBox.y, boundingBox.getMaxY(), 0.1, 1000.0);
 
@@ -41,12 +42,43 @@ namespace ks
 			return glm::vec2(p.x, p.y);
 		};
 
-		const ks::Quadrilateral quad = des.getQuad();
+		const Quadrilateral quad = des.getQuad();
 		const glm::vec2 topLeft = applyProjection(quad.topLeft, projection);
 		const glm::vec2 topRight = applyProjection(quad.topRight, projection);
 		const glm::vec2 bottomLeft = applyProjection(quad.bottomLeft, projection);
 		const glm::vec2 bottomRight = applyProjection(quad.bottomRight, projection);
 
-		return ks::RectTransDescription(ks::Quadrilateral(topLeft, topRight, bottomLeft, bottomRight));
+		return RectTransDescription(Quadrilateral(topLeft, topRight, bottomLeft, bottomRight));
+	}
+
+	PixelBuffer * createOriginLUT(const unsigned int cubeLength) noexcept
+	{
+		assert(ks::isPowerOfTwo(cubeLength));
+		const unsigned int smallCubeLength = sqrt(cubeLength);
+		const unsigned int imageLength = smallCubeLength * cubeLength;
+
+		PixelBuffer* pixelBuffer = new PixelBuffer(imageLength, imageLength, PixelBuffer::FormatType::rgba8);
+
+		for (unsigned z = 0; z < cubeLength; z++)
+		{
+			for (unsigned x = 0; x < cubeLength; x++)
+			{
+				for (unsigned y = 0; y < cubeLength; y++)
+				{
+					glm::vec3 pixelf(
+						(float)x * 255.0f / (float)(cubeLength - 1) + 0.5,
+						(float)y * 255.0f / (float)(cubeLength - 1) + 0.5,
+						(float)z * 255.0f / (float)(cubeLength - 1) + 0.5
+					);
+					glm::u8vec4 pixelu8(pixelf.x, pixelf.y, pixelf.z, 255);
+					const unsigned int imgY = z / smallCubeLength * cubeLength + y;
+					const unsigned int imgX = z % smallCubeLength * cubeLength + x;
+					const unsigned int index = imgY * imageLength + imgX;
+					memcpy(pixelBuffer->getMutableData()[0] + index * sizeof(glm::u8vec4), glm::value_ptr(pixelu8), sizeof(glm::u8vec4));
+				}
+			}
+		}
+
+		return pixelBuffer;
 	}
 }

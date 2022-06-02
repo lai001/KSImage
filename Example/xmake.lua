@@ -29,6 +29,7 @@ rule("Example.Copy")
         end
         os.cp("Shader/*.hlsl", shaderDir)
         os.cp("Resource/*.jpg", resourceDir)
+        os.cp("Resource/*.png", resourceDir)
     end)
 
 rule("Example.Clean")    

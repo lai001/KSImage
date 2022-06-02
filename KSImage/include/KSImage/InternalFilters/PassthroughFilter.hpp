@@ -1,5 +1,5 @@
-#ifndef KSImage_PassthroughFilter_hpp
-#define KSImage_PassthroughFilter_hpp
+#ifndef KSImage_InternalFilters_PassthroughFilter_hpp
+#define KSImage_InternalFilters_PassthroughFilter_hpp
 
 #include "Filter.hpp"
 #include "defs.hpp"
@@ -18,4 +18,4 @@ namespace ks
 	};
 }
 
-#endif // !KSImage_PassthroughFilter_hpp
+#endif // !KSImage_InternalFilters_PassthroughFilter_hpp

@@ -1,7 +1,6 @@
 #ifndef KSImage_Rect_hpp
 #define KSImage_Rect_hpp
 
-#include <algorithm>
 #include "defs.hpp"
 
 namespace ks

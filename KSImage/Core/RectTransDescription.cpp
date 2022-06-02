@@ -1,15 +1,14 @@
 #include "RectTransDescription.hpp"
 #include <algorithm>
 
-
 namespace ks
 {
 	RectTransDescription::RectTransDescription()
-		:rect(ks::Rect()), quad(Quadrilateral())
+		:rect(Rect()), quad(Quadrilateral())
 	{
 	}
 
-	RectTransDescription::RectTransDescription(ks::Rect rect)
+	RectTransDescription::RectTransDescription(Rect rect)
 		:rect(rect)
 	{
 		quad.topLeft = glm::vec2(rect.x, rect.getMaxY());
@@ -18,7 +17,7 @@ namespace ks
 		quad.bottomRight = glm::vec2(rect.getMaxX(), rect.y);
 	}
 
-	RectTransDescription::RectTransDescription(ks::Quadrilateral quad)
+	RectTransDescription::RectTransDescription(Quadrilateral quad)
 		:quad(quad)
 	{
 		const glm::vec2 topLeft = quad.topLeft;
@@ -29,7 +28,7 @@ namespace ks
 		const float y = std::min(bottomLeft.y, bottomRight.y);
 		const float width = std::max(topRight.x, bottomRight.x) - x;
 		const float height = std::max(topLeft.y, topRight.y) - y;
-		rect = ks::Rect(x, y, width, height);
+		rect = Rect(x, y, width, height);
 	}
 
 	RectTransDescription RectTransDescription::applyTransform(const glm::mat3& t) noexcept
@@ -49,7 +48,7 @@ namespace ks
 		const float maxY = std::max({ topLeft.y, topRight.y, bottomLeft.y, bottomRight.y });
 		const float width = maxX - minX;
 		const float height = maxY - minY;
-		rectTransDescription.rect = ks::Rect(minX, minY, width, height);
+		rectTransDescription.rect = Rect(minX, minY, width, height);
 		rectTransDescription.transform = t * transform;
 		return rectTransDescription;
 	}
@@ -103,12 +102,12 @@ namespace ks
 		return applyTransform(t1 * r * t0);
 	}
 
-	ks::Rect RectTransDescription::getBound() const noexcept
+	Rect RectTransDescription::getBound() const noexcept
 	{
 		return rect;
 	}
 
-	ks::Quadrilateral RectTransDescription::getQuad() const noexcept
+	Quadrilateral RectTransDescription::getQuad() const noexcept
 	{
 		return quad;
 	}

@@ -50,7 +50,7 @@ float2 ks_getWorkingSpacePixelSize()
 		bool isFindReturnType = false;
 		bool isFindEntryFunc = false;
 
-		std::unique_ptr<ks::KernelUniform::Info> uniformInfo;
+		std::unique_ptr<KernelUniform::Info> uniformInfo;
 
 		for (const char& c : code)
 		{
@@ -81,32 +81,32 @@ float2 ks_getWorkingSpacePixelSize()
 					{
 						if (IdentifierStr == "Texture2D")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::texture2d);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::texture2d);
 							result.texture2DCount += 1;
 						}
 						else if (IdentifierStr == "float")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::f32);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::f32);
 						}
 						else if (IdentifierStr == "float2")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::vec2);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::vec2);
 						}
 						else if (IdentifierStr == "float3")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::vec3);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::vec3);
 						}
 						else if (IdentifierStr == "float4")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::vec4);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::vec4);
 						}
 						else if (IdentifierStr == "float3x3")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::mat3);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::mat3);
 						}
 						else if (IdentifierStr == "float4x4")
 						{
-							uniformInfo = std::make_unique<ks::KernelUniform::Info>("", ks::KernelUniform::ValueType::mat4);
+							uniformInfo = std::make_unique<KernelUniform::Info>("", KernelUniform::ValueType::mat4);
 						}
 						else if (uniformInfo)
 						{
@@ -132,10 +132,10 @@ float2 ks_getWorkingSpacePixelSize()
 
 		
 		{
-			result.internalUniformInfos.push_back(ks::KernelUniform::Info(ShareInfo().workingSpacePixelSizeUniformName(), ks::KernelUniform::ValueType::vec2));
+			result.internalUniformInfos.push_back(KernelUniform::Info(ShareInfo().workingSpacePixelSizeUniformName(), KernelUniform::ValueType::vec2));
 			for (int number = 0; number < result.texture2DCount; number++)
 			{
-				result.internalUniformInfos.push_back(ks::KernelUniform::Info(ShareInfo().uniformSamplerSpaceName(number), ks::KernelUniform::ValueType::vec4));
+				result.internalUniformInfos.push_back(KernelUniform::Info(ShareInfo().uniformSamplerSpaceName(number), KernelUniform::ValueType::vec4));
 			}
 		}
 
@@ -164,7 +164,7 @@ float4 main(PS_INPUT input) : SV_Target
 }
 )";
 			
-		std::vector<ks::KernelUniform::Info> uniformInfos;
+		std::vector<KernelUniform::Info> uniformInfos;
 		uniformInfos.insert(uniformInfos.end(), result.uniformInfos.begin(), result.uniformInfos.end());
 		uniformInfos.insert(uniformInfos.end(), result.internalUniformInfos.begin(), result.internalUniformInfos.end());
 
@@ -188,21 +188,21 @@ float4 main(PS_INPUT input) : SV_Target
 
 			for (int i = 0; i < result.uniformInfos.size(); i++)
 			{
-				const ks::KernelUniform::Info uniform = result.uniformInfos[i];
-				if (uniform.type == ks::KernelUniform::ValueType::texture2d)
+				const KernelUniform::Info uniform = result.uniformInfos[i];
+				if (uniform.type == KernelUniform::ValueType::texture2d)
 				{
 					parameters.push_back(ShareInfo::texture2DName(textureIndex));
 					textureIndex += 1;
 				}
 				else
 				{
-					std::unordered_map<ks::KernelUniform::ValueType, std::string> dic;
-					dic[ks::KernelUniform::ValueType::f32] = "float";
-					dic[ks::KernelUniform::ValueType::vec2] = "float2";
-					dic[ks::KernelUniform::ValueType::vec3] = "float3";
-					dic[ks::KernelUniform::ValueType::vec4] = "float4";
-					dic[ks::KernelUniform::ValueType::mat3] = "float3x3";
-					dic[ks::KernelUniform::ValueType::mat4] = "float4x4";
+					std::unordered_map<KernelUniform::ValueType, std::string> dic;
+					dic[KernelUniform::ValueType::f32] = "float";
+					dic[KernelUniform::ValueType::vec2] = "float2";
+					dic[KernelUniform::ValueType::vec3] = "float3";
+					dic[KernelUniform::ValueType::vec4] = "float4";
+					dic[KernelUniform::ValueType::mat3] = "float3x3";
+					dic[KernelUniform::ValueType::mat4] = "float4x4";
 					assert(dic.find(uniform.type) != dic.end());
 
 					parameters.push_back(fmt::format("{}", uniform.name));
@@ -223,7 +223,7 @@ float4 main(PS_INPUT input) : SV_Target
 		return templateCode;
 	}
 
-	std::string FragmentAnalysis::getConstantBufferCode(const std::vector<ks::KernelUniform::Info>& uniformInfos) const
+	std::string FragmentAnalysis::getConstantBufferCode(const std::vector<KernelUniform::Info>& uniformInfos) const
 	{
 		std::string templateCode = R"(
 cbuffer Uniforms : register(b0)
@@ -233,38 +233,38 @@ $members
 )";
 		struct largeThan
 		{
-			inline bool operator() (const ks::KernelUniform::Info& struct1, const ks::KernelUniform::Info& struct2)
+			inline bool operator() (const KernelUniform::Info& struct1, const KernelUniform::Info& struct2)
 			{
-				std::unordered_map<ks::KernelUniform::ValueType, unsigned int> indexDic;
-				indexDic[ks::KernelUniform::ValueType::f32] = 0;
-				indexDic[ks::KernelUniform::ValueType::vec2] = 1;
-				indexDic[ks::KernelUniform::ValueType::vec3] = 2;
-				indexDic[ks::KernelUniform::ValueType::vec4] = 3;
-				indexDic[ks::KernelUniform::ValueType::mat3] = 4;
-				indexDic[ks::KernelUniform::ValueType::mat4] = 5;
-				indexDic[ks::KernelUniform::ValueType::texture2d] = 6;
+				std::unordered_map<KernelUniform::ValueType, unsigned int> indexDic;
+				indexDic[KernelUniform::ValueType::f32] = 0;
+				indexDic[KernelUniform::ValueType::vec2] = 1;
+				indexDic[KernelUniform::ValueType::vec3] = 2;
+				indexDic[KernelUniform::ValueType::vec4] = 3;
+				indexDic[KernelUniform::ValueType::mat3] = 4;
+				indexDic[KernelUniform::ValueType::mat4] = 5;
+				indexDic[KernelUniform::ValueType::texture2d] = 6;
 				assert(indexDic.find(struct1.type) != indexDic.end());
 				assert(indexDic.find(struct2.type) != indexDic.end());
 
 				return indexDic.at(struct1.type) > indexDic.at(struct2.type);
 			}
 		};
-		std::vector<ks::KernelUniform::Info> sortedUniformInfos = uniformInfos;
+		std::vector<KernelUniform::Info> sortedUniformInfos = uniformInfos;
 		std::sort(sortedUniformInfos.begin(), sortedUniformInfos.end(), largeThan());
 
 		std::string members;
-		std::unordered_map<ks::KernelUniform::ValueType, std::string> dic;
-		dic[ks::KernelUniform::ValueType::f32] = "float";
-		dic[ks::KernelUniform::ValueType::vec2] = "float2";
-		dic[ks::KernelUniform::ValueType::vec3] = "float3";
-		dic[ks::KernelUniform::ValueType::vec4] = "float4";
-		dic[ks::KernelUniform::ValueType::mat3] = "float3x3";
-		dic[ks::KernelUniform::ValueType::mat4] = "float4x4";
+		std::unordered_map<KernelUniform::ValueType, std::string> dic;
+		dic[KernelUniform::ValueType::f32] = "float";
+		dic[KernelUniform::ValueType::vec2] = "float2";
+		dic[KernelUniform::ValueType::vec3] = "float3";
+		dic[KernelUniform::ValueType::vec4] = "float4";
+		dic[KernelUniform::ValueType::mat3] = "float3x3";
+		dic[KernelUniform::ValueType::mat4] = "float4x4";
 
 		for (size_t i = 0; i < sortedUniformInfos.size(); i++)
 		{
-			const ks::KernelUniform::Info uniform = sortedUniformInfos[i];
-			if (uniform.type == ks::KernelUniform::ValueType::texture2d)
+			const KernelUniform::Info uniform = sortedUniformInfos[i];
+			if (uniform.type == KernelUniform::ValueType::texture2d)
 			{
 				continue;
 			}
@@ -323,7 +323,7 @@ $members
 		return getTexture2DSamplersCode(names);
 	}
 
-	std::string FragmentAnalysis::getHelperCode(const std::vector<ks::KernelUniform::Info>& uniformInfos, 
+	std::string FragmentAnalysis::getHelperCode(const std::vector<KernelUniform::Info>& uniformInfos, 
 		const unsigned int texture2DCount) const
 	{
 		std::string helperCode = getAdditionalCode();

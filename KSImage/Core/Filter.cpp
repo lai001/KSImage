@@ -1,9 +1,10 @@
 #include "Filter.hpp"
 #include "ImageVertex.hpp"
+#include "Util.hpp"
 
 namespace ks
 {
-	ks::Image* Filter::outputImage(const ks::Rect* rect)
+	Image* Filter::outputImage(const Rect* rect)
 	{
 		if (currentOutputImage)
 		{
@@ -11,20 +12,20 @@ namespace ks
 		}
 		if (rect)
 		{
-			currentOutputImage = ks::Image::create(*rect);
+			currentOutputImage = Image::create(*rect);
 		}
 		else
 		{
-			std::vector<ks::Image*> images;
+			std::vector<Image*> images;
 			for (size_t i = 0; i < uniformValues.size(); i++)
 			{
-				ks::KernelUniform::Value uniformValue = uniformValues[i];
-				if (uniformValue.type == ks::KernelUniform::ValueType::texture2d)
+				KernelUniform::Value uniformValue = uniformValues[i];
+				if (uniformValue.type == KernelUniform::ValueType::texture2d)
 				{
 					images.push_back(uniformValue.texture2d);
 				}
 			}
-			currentOutputImage = ks::Image::create(ks::getUnionRect(images));
+			currentOutputImage = Image::create(getUnionRect(images));
 		}
 		currentOutputImage->sourceFilter = this;
 		return currentOutputImage;
@@ -38,26 +39,26 @@ namespace ks
 		}
 	}
 
-	KernelRenderInstruction Filter::onPrepare(const ks::Rect& renderRect)
+	KernelRenderInstruction Filter::onPrepare(const Rect& renderRect)
 	{
 		const std::vector<unsigned int > indexBuffer = std::vector<unsigned int >{
 			0, 1, 2, 2, 1, 3
 		};
 
-		const std::vector<ks::ImageVertex> vertexs = {
-			ks::ImageVertex(glm::vec3(-1.0,  1.0, 1.0), glm::vec2(0.0, 0.0)),
-			ks::ImageVertex(glm::vec3( 1.0,  1.0, 1.0), glm::vec2(1.0, 0.0)),
-			ks::ImageVertex(glm::vec3(-1.0, -1.0, 1.0), glm::vec2(0.0, 1.0)),
-			ks::ImageVertex(glm::vec3( 1.0, -1.0, 1.0), glm::vec2(1.0, 1.0)),
+		const std::vector<ImageVertex> vertexs = {
+			ImageVertex(glm::vec3(-1.0,  1.0, 1.0), glm::vec2(0.0, 0.0)),
+			ImageVertex(glm::vec3( 1.0,  1.0, 1.0), glm::vec2(1.0, 0.0)),
+			ImageVertex(glm::vec3(-1.0, -1.0, 1.0), glm::vec2(0.0, 1.0)),
+			ImageVertex(glm::vec3( 1.0, -1.0, 1.0), glm::vec2(1.0, 1.0)),
 		};
 
-		kernel->setVertexObject(vertexs.data(), vertexs.size(), sizeof(ks::ImageVertex),
-			indexBuffer.data(), indexBuffer.size(), ks::IIndexBuffer::IndexDataType::uint32);
+		kernel->setVertexObject(vertexs.data(), vertexs.size(), sizeof(ImageVertex),
+			indexBuffer.data(), indexBuffer.size(), IIndexBuffer::IndexDataType::uint32);
 
 		KernelRenderInstruction instruction;
 		instruction.workingSpacePixelSize = glm::vec2(renderRect.width, renderRect.height);
-		const std::vector<ks::Image*>& inputImages = getInputImages();
-		for (const ks::Image* inputImage : inputImages)
+		const std::vector<Image*>& inputImages = getInputImages();
+		for (const Image* inputImage : inputImages)
 		{
 			Rect sampleSapceRectNorm;
 			const Rect rect = inputImage->getRect();
@@ -78,28 +79,28 @@ namespace ks
 		return instruction;
 	}
 
-	void Filter::setValues(const std::vector<ks::KernelUniform::Value>& uniformValues) noexcept
+	void Filter::setValues(const std::vector<KernelUniform::Value>& uniformValues) noexcept
 	{
 		this->uniformValues.clear();
 		this->uniformValues = uniformValues;
 	}
 
-	std::shared_ptr<ks::Kernel> Filter::getKernel() const noexcept
+	std::shared_ptr<Kernel> Filter::getKernel() const noexcept
 	{
 		return kernel;
 	}
 
-	std::vector<ks::KernelUniform::Value> Filter::getUniformValues() const noexcept
+	std::vector<KernelUniform::Value> Filter::getUniformValues() const noexcept
 	{
 		return uniformValues;
 	}
 
-	std::vector<ks::Image*> Filter::getInputImages() const noexcept
+	std::vector<Image*> Filter::getInputImages() const noexcept
 	{
-		std::vector<ks::Image*> images;
+		std::vector<Image*> images;
 		for (auto& uniformValue : uniformValues)
 		{
-			if (uniformValue.type == ks::KernelUniform::ValueType::texture2d)
+			if (uniformValue.type == KernelUniform::ValueType::texture2d)
 			{
 				images.push_back(uniformValue.texture2d);
 			}
@@ -107,7 +108,7 @@ namespace ks
 		return images;
 	}
 
-	const ks::Image* Filter::getCurrentOutputImage() const noexcept
+	const Image* Filter::getCurrentOutputImage() const noexcept
 	{
 		return currentOutputImage;
 	}
