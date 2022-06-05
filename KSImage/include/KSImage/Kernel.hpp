@@ -20,8 +20,8 @@ namespace ks
 
 	class KSImage_API Kernel : public noncopyable
 	{
-	public:
-		static IRenderEngine* renderEngine;
+	private:
+		IRenderEngine* renderEngine = nullptr;
 
 	private:
 		IShader* shader = nullptr;

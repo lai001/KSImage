@@ -9,7 +9,7 @@ namespace ks
 	class KSImage_API MixTwoImageFilter: public Filter
 	{
 	public:
-		float u_intensity = 0.0;
+		float u_intensity = 0.5;
 		ks::Image* inputImage = nullptr;
 		ks::Image* inputTargetImage = nullptr;
 

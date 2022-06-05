@@ -17,5 +17,6 @@
 #include "InternalFilters/LutFilter.hpp"
 #include "InternalFilters/BlurFilter.hpp"
 #include "InternalFilters/GrayscaleFilter.hpp"
+#include "InternalFilters/SourceOverFilter.hpp"
 
 #endif // !KSImage_KSImage_hpp

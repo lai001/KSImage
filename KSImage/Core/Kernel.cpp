@@ -1,10 +1,9 @@
 #include "Kernel.hpp"
 #include "Util.hpp"
+#include "FilterContext.hpp"
 
 namespace ks
 {
-	IRenderEngine* Kernel::renderEngine = nullptr;
-
 	const std::string DefaultVertexShaderCode = R"(
 struct VS_INPUT
 {
@@ -41,10 +40,11 @@ PS_INPUT main(VS_INPUT input)
 
 	std::shared_ptr<Kernel> Kernel::create(const std::string& kernelFragmentShader) noexcept
 	{
+		assert(FilterContext::renderEngine);
 		FragmentAnalysis::AnalysisResult analysisResult = FragmentAnalysis().analysis(kernelFragmentShader);
-
 		std::shared_ptr<Kernel> kernel = std::make_shared<Kernel>();
-		kernel->shader = Kernel::renderEngine->createShader(DefaultVertexShaderCode, analysisResult.fragmentShaderCode);
+		kernel->renderEngine = FilterContext::renderEngine;
+		kernel->shader = kernel->renderEngine->createShader(DefaultVertexShaderCode, analysisResult.fragmentShaderCode);
 		kernel->analysisResult = analysisResult;
 		assert(kernel->shader);
 		return kernel;

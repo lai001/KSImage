@@ -7,23 +7,12 @@
 
 namespace ks
 {
+	ks::IRenderEngine* FilterContext::renderEngine = nullptr;
+
 	FilterContext* FilterContext::create() noexcept
 	{
-		return new FilterContext();
-	}
-
-#ifdef _WIN32
-	void FilterContext::Init(const D3D11RenderEngineCreateInfo & info) noexcept
-	{
-		assert(Kernel::renderEngine == nullptr);
-		Kernel::renderEngine = RenderEngine::create(info);
-	}
-#endif
-
-	void FilterContext::Init(const GLRenderEngineCreateInfo & info) noexcept
-	{
-		assert(Kernel::renderEngine == nullptr);
-		Kernel::renderEngine = RenderEngine::create(info);
+		FilterContext* filterContext = new FilterContext();
+		return filterContext;
 	}
 }
 
@@ -64,13 +53,13 @@ namespace ks
 		std::vector<ITexture2D*> textureHandles,
 		const Rect& renderRect)
 	{
-		assert(Kernel::renderEngine);
+		assert(FilterContext::renderEngine);
 		assert(filter);
 		std::shared_ptr<Kernel> kernel = filter->getKernel();
 		const KernelRenderInstruction renderInstruction = filter->onPrepare(renderRect);
 		assert(kernel);
-		IRenderEngine& renderEngine = *Kernel::renderEngine;
-		IFrameBuffer* frameBuffer = renderEngine.createFrameBuffer(renderRect.width, renderRect.height);
+		//IRenderEngine& renderEngine = renderEngine;
+		IFrameBuffer* frameBuffer = FilterContext::renderEngine->createFrameBuffer(renderRect.width, renderRect.height);
 		kernel->setUniform(filter->getUniformValues(), textureHandles, renderInstruction);
 		kernel->commit(*frameBuffer);
 		return frameBuffer;
@@ -78,8 +67,8 @@ namespace ks
 
 	IFrameBuffer* _walk(FilterChainNode rootNode)
 	{
-		assert(Kernel::renderEngine);
-		IRenderEngine& renderEngine = *Kernel::renderEngine;
+		assert(FilterContext::renderEngine);
+		//IRenderEngine& renderEngine = *Kernel::renderEngine;
 
 		std::vector<ITexture2D*> textureHandles;
 		std::vector<IFrameBuffer*> childBuffers;
@@ -103,7 +92,7 @@ namespace ks
 				const int width = image->getSourceWidth();
 				const int height = image->getSourceHeight();
 				
-				ITexture2D* textureHandle = renderEngine.createTexture2D(width,
+				ITexture2D* textureHandle = FilterContext::renderEngine->createTexture2D(width,
 					height,
 					TextureFormat::R8G8B8A8_UNORM, 
 					data);
@@ -114,48 +103,47 @@ namespace ks
 			{
 				for (size_t i = 0; i < textureHandles.size(); i++)
 				{
-					Kernel::renderEngine->erase(textureHandles[i]);
+					FilterContext::renderEngine->erase(textureHandles[i]);
 				}
 			};
 		}
 
-		defer
-		{
-			if (cleanClosure)
-			{
-				cleanClosure();
-			}
-			for (size_t i = 0; i < childBuffers.size(); i++)
-			{
-				assert(Kernel::renderEngine);
-				IRenderEngine& renderEngine = *Kernel::renderEngine;
-				if (childBuffers[i])
-				{
-					renderEngine.erase(childBuffers[i]);
-				}
-			}
-		};
-
 		Rect renderRect = rootNode.filter->getCurrentOutputImage()->getRect();
-		return render(rootNode.filter, textureHandles, renderRect);
+		IFrameBuffer* frameBuffer = render(rootNode.filter, textureHandles, renderRect);
+
+		if (cleanClosure)
+		{
+			cleanClosure();
+		}
+		for (size_t i = 0; i < childBuffers.size(); i++)
+		{
+			assert(FilterContext::renderEngine);
+			//IRenderEngine& renderEngine = *Kernel::renderEngine;
+			if (childBuffers[i])
+			{
+				FilterContext::renderEngine->erase(childBuffers[i]);
+			}
+		}
+
+		return frameBuffer;
 	}
 
 	PixelBuffer * createPixelBuffer(const IFrameBuffer* frameBuffer)
 	{
-		assert(Kernel::renderEngine);
-		IRenderEngine& renderEngine = *Kernel::renderEngine;
+		assert(FilterContext::renderEngine);
+		//IRenderEngine& renderEngine = *Kernel::renderEngine;
 		PixelBuffer *pixelBuffer = new PixelBuffer(frameBuffer->getWidth(),
 			frameBuffer->getHeight(),
 			PixelBuffer::FormatType::rgba8);
-		renderEngine.readTexture(frameBuffer, *pixelBuffer);
+		FilterContext::renderEngine->readTexture(frameBuffer, *pixelBuffer);
 		return pixelBuffer;
 	}
 
 	PixelBuffer* passthrough(IFrameBuffer* frameBuffer, const Rect& innerRect, const Rect& bound)
 	{
 		// TODO:
-		assert(Kernel::renderEngine);
-		IRenderEngine& renderEngine = *Kernel::renderEngine;
+		assert(FilterContext::renderEngine);
+		//IRenderEngine& renderEngine = *Kernel::renderEngine;
 
 		std::unique_ptr<Image> inputImage = std::unique_ptr<Image>(Image::createRetain(createPixelBuffer(frameBuffer)));
 		std::unique_ptr<PassthroughFilter> passthroughFilter = std::unique_ptr<PassthroughFilter>(PassthroughFilter::create());
@@ -165,19 +153,19 @@ namespace ks
 
 		FilterChainNode rootNode = makeChain(*outputImage);
 		IFrameBuffer* passthroughFrameBuffer = _walk(rootNode);
-		defer { renderEngine.erase(passthroughFrameBuffer); };
-		return createPixelBuffer(passthroughFrameBuffer);
+		PixelBuffer * pixelBuffer = createPixelBuffer(passthroughFrameBuffer);
+		FilterContext::renderEngine->erase(passthroughFrameBuffer);
+		return pixelBuffer;
 	}
 
 	PixelBuffer* FilterContext::render(const Image & image, const Rect& bound) const noexcept
 	{
-		assert(Kernel::renderEngine);
-		IRenderEngine& renderEngine = *Kernel::renderEngine;
-
+		assert(FilterContext::renderEngine);
+		//IRenderEngine& renderEngine = *Kernel::renderEngine;
 		FilterChainNode rootNode = makeChain(image);
 		IFrameBuffer* frameBuffer = _walk(rootNode);
-		defer { renderEngine.erase(frameBuffer); };
 		PixelBuffer * pixelBuffer = passthrough(frameBuffer, rootNode.filter->getCurrentOutputImage()->getRect(), bound);
+		FilterContext::renderEngine->erase(frameBuffer);
 		return pixelBuffer;
 	}
 }

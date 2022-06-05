@@ -42,27 +42,29 @@ namespace ks
 
 		explicit RectTransDescription(ks::Quadrilateral quad);
 
-		RectTransDescription applyTransform(const glm::mat3& t) noexcept;
+		RectTransDescription applyTransform(const glm::mat3& t) const noexcept;
 
-		RectTransDescription translate(const glm::vec2& xy) noexcept;
+		RectTransDescription translate(const glm::vec2& xy) const noexcept;
 
-		RectTransDescription scale(const glm::vec2& xy) noexcept;
+		RectTransDescription scale(const glm::vec2& xy) const noexcept;
 
-		RectTransDescription scaleAround(const glm::vec2& xy, const glm::vec2& point) noexcept;
+		RectTransDescription scaleAround(const glm::vec2& xy, const glm::vec2& point) const noexcept;
 
 		RectTransDescription scaleAroundCenter(const glm::vec2& xy) noexcept;
 
-		RectTransDescription rotate(const float radian) noexcept;
+		RectTransDescription rotate(const float radian) const noexcept;
 
-		RectTransDescription rotateAroundCenter(const float radian) noexcept;
+		RectTransDescription rotateAroundCenter(const float radian) const noexcept;
 
-		RectTransDescription rotateAround(const float radian, const glm::vec2& point) noexcept;
+		RectTransDescription rotateAround(const float radian, const glm::vec2& point) const noexcept;
 
 		ks::Rect getBound() const noexcept;
 
 		ks::Quadrilateral getQuad() const noexcept;
 
 		glm::mat3 getTransform() const noexcept;
+
+		RectTransDescription newRect(const ks::Rect rect) const noexcept;
 	};
 }
 

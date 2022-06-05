@@ -22,7 +22,8 @@ namespace ks
 		Rect _rect;
 		Image::FormatType format = Image::FormatType::rgba8;
 		Filter* sourceFilter = nullptr;
-		ks::PixelBuffer* pixelBuffer = nullptr;
+		const ks::PixelBuffer* pixelBuffer = nullptr;
+		std::function<void()> cleanClosure;
 
 	public:
 		~Image();
@@ -32,6 +33,7 @@ namespace ks
 		static Image* create(const ks::Rect& rect);
 		static Image* create(const std::string& filePath);
 		static Image* createRetain(ks::PixelBuffer* pixelBuffer);
+		static Image* createBorrow(const ks::PixelBuffer* pixelBuffer);
 
 		const unsigned char* getData() const noexcept;
 		const int getSourceWidth() const noexcept;
@@ -45,7 +47,6 @@ namespace ks
 		static bool isCompatible(const ks::PixelBuffer::FormatType type) noexcept;
 		static ks::Image::FormatType pixelFormatToImageFormat(const ks::PixelBuffer::FormatType type) noexcept;
 		const ks::PixelBuffer* getPixelBuffer() const noexcept;
-		ks::PixelBuffer* getMutablePixelBuffer() const noexcept;
 	};
 }
 

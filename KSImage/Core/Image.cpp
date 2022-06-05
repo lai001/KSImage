@@ -7,9 +7,9 @@ namespace ks
 {
 	Image::~Image()
 	{
-		if (pixelBuffer)
+		if (cleanClosure)
 		{
-			delete pixelBuffer;
+			cleanClosure();
 		}
 	}
 
@@ -40,15 +40,30 @@ namespace ks
 		image->format = pixelFormatToImageFormat(pixelBuffer->getType());
 		image->pixelBuffer = pixelBuffer;
 		image->_rect = Rect(0, 0, pixelBuffer->getWidth(), pixelBuffer->getHeight());
+		image->cleanClosure = [pixelBuffer]()
+		{
+			assert(pixelBuffer);
+			delete pixelBuffer;
+		};
+		return image;
+	}
+
+	Image * Image::createBorrow(const ks::PixelBuffer * pixelBuffer)
+	{
+		assert(pixelBuffer);
+		Image* image = new Image();
+		image->format = pixelFormatToImageFormat(pixelBuffer->getType());
+		image->pixelBuffer = pixelBuffer;
+		image->_rect = Rect(0, 0, pixelBuffer->getWidth(), pixelBuffer->getHeight());
 		return image;
 	}
 
 	const unsigned char * Image::getData() const noexcept
 	{
-		if (PixelBuffer* buffer = pixelBuffer)
+		if (const PixelBuffer* buffer = pixelBuffer)
 		{
 			assert(isCompatible(buffer->getType()));
-			return buffer->getMutableData()[0];
+			return buffer->getImmutableData()[0];
 		}
 		else
 		{
@@ -58,7 +73,7 @@ namespace ks
 
 	const int Image::getSourceWidth() const noexcept
 	{
-		if (PixelBuffer* buffer = pixelBuffer)
+		if (const PixelBuffer* buffer = pixelBuffer)
 		{
 			return buffer->getWidth();
 		}
@@ -70,7 +85,7 @@ namespace ks
 
 	const int Image::getSourceHeight() const noexcept
 	{
-		if (PixelBuffer* buffer = pixelBuffer)
+		if (const PixelBuffer* buffer = pixelBuffer)
 		{
 			return buffer->getHeight();
 		}
@@ -82,7 +97,7 @@ namespace ks
 
 	const int Image::getSourceChannels() const noexcept
 	{
-		if (PixelBuffer* buffer = pixelBuffer)
+		if (const PixelBuffer* buffer = pixelBuffer)
 		{
 			return buffer->getChannels();
 		}
@@ -125,11 +140,6 @@ namespace ks
 	}
 
 	const PixelBuffer * Image::getPixelBuffer() const noexcept
-	{
-		return pixelBuffer;
-	}
-
-	PixelBuffer * Image::getMutablePixelBuffer() const noexcept
 	{
 		return pixelBuffer;
 	}

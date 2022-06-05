@@ -13,6 +13,7 @@
 #include "ImageIO.hpp"
 
 std::unique_ptr<ImageDecoder> imageDecoder = std::make_unique<ImageDecoder>();
+std::unique_ptr<ks::IRenderEngine> defaultRenderEngine = std::unique_ptr<ks::IRenderEngine>();
 
 struct Transform
 {
@@ -114,10 +115,7 @@ void drawResult(const std::shared_ptr<ks::PixelBuffer> pixelBuffer)
 	static const std::string vert = ks::File::read(ks::Application::getResourcePath("Shader/vert.hlsl"), nullptr);
 	static const std::string frag = ks::File::read(ks::Application::getResourcePath("Shader/frag.hlsl"), nullptr);
 
-	ks::D3D11RenderEngineCreateInfo createInfo;
-	createInfo.device = windowsPlatformPtr->pd3dDevice;
-	createInfo.context = windowsPlatformPtr->pd3dDeviceContext;
-	static ks::IRenderEngine& engine = *ks::RenderEngine::create(createInfo);
+	ks::IRenderEngine& engine = *defaultRenderEngine;
 
 	struct Vertex
 	{
@@ -203,6 +201,9 @@ void frameTick()
 	mixTwoImageFilter0->name = "mixTwoImageFilter0";
 	mixTwoImageFilter0->u_intensity = dataSource.mixFactor;
 
+	static std::shared_ptr<ks::SourceOverFilter> sourceOverFilter0 = std::shared_ptr<ks::SourceOverFilter>(ks::SourceOverFilter::create());
+	sourceOverFilter0->name = "sourceOverFilter0";
+
 	static std::shared_ptr<ks::LutFilter> lutFilter0 = std::shared_ptr<ks::LutFilter>(ks::LutFilter::create());
 	lutFilter0->name = "lutFilter0";
 	lutFilter0->lutImage = warmthLutImage.get();
@@ -223,14 +224,14 @@ void frameTick()
 		transformFilter0->inputImage = blurFilter0->outputImage();
 		transformFilter1->inputImage = lutFilter0->outputImage();
 
-		mixTwoImageFilter0->inputImage = transformFilter0->outputImage();
-		mixTwoImageFilter0->inputTargetImage = transformFilter1->outputImage();
+		sourceOverFilter0->inputImage = transformFilter0->outputImage();
+		sourceOverFilter0->inputTargetImage = transformFilter1->outputImage();
 	}
 
 	static std::unique_ptr<ks::FilterContext> context = std::unique_ptr<ks::FilterContext>(ks::FilterContext::create());
 
 	std::shared_ptr<ks::PixelBuffer> bufferPtr = 
-		std::shared_ptr<ks::PixelBuffer>(context->render(*mixTwoImageFilter0->outputImage(), ks::Rect(0.0, 0.0, 1280, 720)));
+		std::shared_ptr<ks::PixelBuffer>(context->render(*sourceOverFilter0->outputImage(), ks::Rect(0.0, 0.0, 1280, 720)));
 	  
 	if (dataSource.isSaveImage && dataSource.isSaveImage())
 	{
@@ -260,9 +261,12 @@ int main(int argc, char** argv)
 	windowsPlatformPtr->Init(cfg);
 
 	ks::D3D11RenderEngineCreateInfo info;
-	info.device = windowsPlatformPtr->pd3dDevice;
-	info.context = windowsPlatformPtr->pd3dDeviceContext;
-	ks::FilterContext::Init(info);
+	ks::D3D11RenderEngineCreateInfo::NativeData data;
+	data.device = windowsPlatformPtr->pd3dDevice;
+	data.context = windowsPlatformPtr->pd3dDeviceContext;
+	info.data = &data;
+	defaultRenderEngine = std::unique_ptr<ks::IRenderEngine>(ks::RenderEngine::create(info));
+	ks::FilterContext::renderEngine = defaultRenderEngine.get();
 
 	ImGuiInit();
 	defer

@@ -31,7 +31,7 @@ namespace ks
 		rect = Rect(x, y, width, height);
 	}
 
-	RectTransDescription RectTransDescription::applyTransform(const glm::mat3& t) noexcept
+	RectTransDescription RectTransDescription::applyTransform(const glm::mat3& t) const noexcept
 	{
 		RectTransDescription rectTransDescription;
 		glm::vec3 topLeft = t * glm::vec3(quad.topLeft, 1.0);
@@ -53,21 +53,21 @@ namespace ks
 		return rectTransDescription;
 	}
 
-	RectTransDescription RectTransDescription::translate(const glm::vec2& xy) noexcept
+	RectTransDescription RectTransDescription::translate(const glm::vec2& xy) const noexcept
 	{
 		glm::mat3 identity = glm::identity<glm::mat3>();
 		glm::mat3 t = glm::translate(identity, xy);
 		return applyTransform(t);
 	}
 
-	RectTransDescription RectTransDescription::scale(const glm::vec2& xy) noexcept
+	RectTransDescription RectTransDescription::scale(const glm::vec2& xy) const noexcept
 	{
 		glm::mat3 identity = glm::identity<glm::mat3>();
 		glm::mat3 t = glm::scale(identity, xy);
 		return applyTransform(t);
 	}
 
-	RectTransDescription RectTransDescription::scaleAround(const glm::vec2 & xy, const glm::vec2 & point) noexcept
+	RectTransDescription RectTransDescription::scaleAround(const glm::vec2 & xy, const glm::vec2 & point) const noexcept
 	{
 		glm::mat3 t0 = glm::translate(glm::identity<glm::mat3>(), glm::vec2(-point.x, -point.y));
 		glm::mat3 s = glm::scale(glm::identity<glm::mat3>(), xy);
@@ -81,20 +81,20 @@ namespace ks
 		return scaleAround(xy, point);
 	}
 
-	RectTransDescription RectTransDescription::rotate(const float radian) noexcept
+	RectTransDescription RectTransDescription::rotate(const float radian) const noexcept
 	{
 		glm::mat3 identity = glm::identity<glm::mat3>();
 		glm::mat3 t = glm::rotate(identity, radian);
 		return applyTransform(t);
 	}
 
-	RectTransDescription RectTransDescription::rotateAroundCenter(const float radian) noexcept
+	RectTransDescription RectTransDescription::rotateAroundCenter(const float radian) const noexcept
 	{
 		const glm::vec2 point = glm::vec2(rect.width / 2.0 + rect.x, rect.height / 2.0 + rect.y);
 		return rotateAround(radian, point);
 	}
 
-	RectTransDescription RectTransDescription::rotateAround(const float radian, const glm::vec2 & point) noexcept
+	RectTransDescription RectTransDescription::rotateAround(const float radian, const glm::vec2 & point) const noexcept
 	{
 		glm::mat3 t0 = glm::translate(glm::identity<glm::mat3>(), glm::vec2(-point.x, -point.y));
 		glm::mat3 r = glm::rotate<float>(glm::identity<glm::mat3>(), radian);
@@ -115,5 +115,15 @@ namespace ks
 	glm::mat3 RectTransDescription::getTransform() const noexcept
 	{
 		return transform;
+	}
+
+	RectTransDescription RectTransDescription::newRect(const ks::Rect rect) const noexcept
+	{
+		float scaleX = rect.width / getBound().width;
+		float scaleY = rect.height / getBound().height;
+		RectTransDescription scaleDescription = scale(glm::vec2(scaleX, scaleY));
+		float distanceX = rect.x - scaleDescription.getBound().x;
+		float distanceY = rect.y - scaleDescription.getBound().y;
+		return scaleDescription.translate(glm::vec2(distanceX, distanceY));
 	}
 }
